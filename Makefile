@@ -42,29 +42,24 @@ install: pre-commit-setup poetry-setup
 .PHONY: format
 format:
 	# calling make _format within poetry make it so that we only init poetry once
-	poetry run isort -rc -y DAAQS tests
-	poetry run black DAAQS tests
+	poetry run isort -rc -y DAAQS 
+	poetry run black DAAQS
 
 
 # Flake8 to check code formatting
 .PHONY: lint
 lint:
-	poetry run flake8 DAAQS tests
-
+#	poetry run flake8 
+	poetry run black DAAQS
 N_THREADS=5
 # Run tests
-.PHONY: test
-test:
-	poetry run pytest tests/ -s -n ${N_THREADS}
+#.PHONY: test
+#test:
+#	poetry run pytest tests/ -s -n ${N_THREADS}
 
 # Run coverage
-.PHONY: coverage
-coverage:
-	poetry run coverage run --concurrency=multiprocessing -m pytest tests/ -s -n ${N_THREADS}
-	poetry run coverage combine
-	poetry run coverage report -m
-
-
-# Run tests and coverage
-.PHONY: test-coverage
-test-coverage: test coverage
+#.PHONY: coverage
+#coverage:
+#	poetry run coverage run --concurrency=multiprocessing -m pytest tests/ -s -n ${N_THREADS}
+#	poetry run coverage combine
+#	poetry run coverage report -m
