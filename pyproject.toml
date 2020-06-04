@@ -6,6 +6,10 @@ authors = ["Kumar Shridhar<shridhar.stark@gmail.com>", "Mohit Anand<>"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
+numpy = "^1.18.5"
+PyYAML = "^5.3.1"
+cdsapi = "^0.2.7"
+cdo = "^1.5.3"
 
 [tool.poetry.dev-dependencies]
 isort = "^4.3.21"
