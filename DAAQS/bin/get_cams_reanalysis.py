@@ -2,10 +2,9 @@ import datetime
 import tempfile
 from shutil import copyfile
 
-import yaml
-
 import cdo
 import cdsapi
+import yaml
 
 """
 create an ADS account at https://ads.atmosphere.copernicus.eu 
