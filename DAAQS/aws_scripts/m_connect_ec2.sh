@@ -1,0 +1,1 @@
+ssh -i /Users/mohit/.ssh/id_rsa mohit@ec2-3-86-182-140.compute-1.amazonaws.com
