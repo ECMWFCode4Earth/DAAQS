@@ -7,7 +7,7 @@ import cdsapi
 import yaml
 
 """
-create an ADS account at https://ads.atmosphere.copernicus.eu 
+create an ADS account at https://ads.atmosphere.copernicus.eu
 and load ADS credentials.
 """
 
@@ -17,8 +17,8 @@ with open("/Users/mohit/.cdsapirc", "r") as f:
 c = cdsapi.Client(url=credentials["url"], key=credentials["key"])
 
 
-### The directory to store data, A data folder with a sub directory as CAMS_data is created.
-### data is also added to the gitignore file.
+# The directory to store data, A data folder with a sub directory as CAMS_data is created.
+# data is also added to the gitignore file.
 
 DATADIR = "data/CAMS_data"
 

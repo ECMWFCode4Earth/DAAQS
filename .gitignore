@@ -4,4 +4,11 @@
 
 ##  Virtual environment files
 
-data
+.venv
+
+## 
+
+
+## DS_Store macfiles
+
+.DS_Store
