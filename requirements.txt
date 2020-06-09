@@ -1,3 +1,4 @@
+cartopy==0.18.0
 cdo==1.5.3
 cdsapi==0.2.7
 certifi==2020.4.5.2
@@ -8,9 +9,12 @@ kiwisolver==1.2.0
 matplotlib==3.2.1
 numpy==1.18.5
 pyparsing==2.4.7
+pyshp==2.1.0
 python-dateutil==2.8.1
 pyyaml==5.3.1
 requests==2.23.0
+scipy==1.4.1
+shapely==1.7.0
 six==1.15.0
 tqdm==4.46.1
 urllib3==1.25.9
