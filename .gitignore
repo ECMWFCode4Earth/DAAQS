@@ -10,3 +10,6 @@
 ## DS_Store macfiles
 
 .DS_Store
+
+## .venvv
+.venv
