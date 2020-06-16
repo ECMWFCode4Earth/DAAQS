@@ -1,3 +1,4 @@
+import csv
 import gzip
 import json
 import os
@@ -67,13 +68,13 @@ def loc_lat_lon(path, year, parameter):
     bc
     None
     """
-    # Uncomment later
-    # daily_list = _generate_daily_list(year)
+
+    daily_list = _generate_daily_list(year)
 
     # Comment Later
-    print("Overriding daily list. The following line should be commented")
-    print("The year year has 3 random days for testing")
-    daily_list = ["2018-01-01/", "2018-06-05/", "2018-07-18/"]
+    # print("Overriding daily list. The following line should be commented")
+    # print("The year year has 3 random days for testing")
+    # daily_list = ["2018-01-01/", "2018-06-05/", "2018-07-18/"]
 
     loc_lat_lon = set()
     for each in tqdm(daily_list):
@@ -84,6 +85,17 @@ def loc_lat_lon(path, year, parameter):
                 loc_lat_lon.add((each.location, each.lat, each.lon))
 
     return loc_lat_lon
+
+
+def write_lll(path, year, parameter):
+
+    lll = loc_lat_lon(path, year, parameter)
+    path = path + "loc_lat_lon/lll_" + year + "_" + parameter + ".csv"
+    with open(path, "w") as f:
+        csv_out = csv.writer(f)
+        csv_out.writerow(["loc", "lat", "lon"])
+        for row in lll:
+            csv_out.writerow(row)
 
 
 class OpenaqData(object):
