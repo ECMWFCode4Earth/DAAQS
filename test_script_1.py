@@ -26,3 +26,4 @@ write_path = root_path+"DAAQS_data/processed/openaq/"
 # ParameterMaps(loc_lat_lon)
 
 write_h5py(path, write_path, 2018)
+
