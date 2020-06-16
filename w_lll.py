@@ -2,7 +2,7 @@ from DAAQS import loc_lat_lon
 import csv
 
 
-# local path
+# local pat
 # root_path = "/Users/mohit/Documents/DAAQS/data/"
 # data_path = "openaq/"
 # day = "2018-01-01/"
