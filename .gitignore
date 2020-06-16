@@ -13,3 +13,7 @@
 
 ## .venvv
 .venv
+
+# Remove PyCache
+
+__pycache__
