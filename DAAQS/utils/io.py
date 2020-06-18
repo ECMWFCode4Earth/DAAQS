@@ -39,10 +39,15 @@ def read_openaq_day(path):
     return data
 
 
-def _generate_daily_list(year):
+def _generate_daily_list(year, **kwargs):
 
     strt_date = datetime(year, 1, 1)
     end_date = datetime(year + 1, 1, 1)
+
+    if "month" in kwargs.keys():
+        month = kwargs["month"]
+        strt_date = datetime(year, month, 1)
+        end_date = datetime(year, month + 1, 1)
 
     num_days = end_date - strt_date
 
@@ -55,7 +60,7 @@ def _generate_daily_list(year):
     return daily_list
 
 
-def loc_lat_lon(path, year, parameter):
+def loc_lat_lon(path, year, parameter, month):
     """
 
     The parameters can be:
@@ -70,7 +75,8 @@ def loc_lat_lon(path, year, parameter):
     """
 
     # daily_list = _generate_daily_list(year)
-
+    daily_list = _generate_daily_list(year, month=month)
+    month = str(month).zfill(2)
     # Comment Later
     print("Overriding daily list. The following line should be commented")
     print("The year has 3 random days for testing")
@@ -100,17 +106,18 @@ def loc_lat_lon(path, year, parameter):
     return loc_lat_lon, data_dist
 
 
-def write_lll(path, year, parameter):
+def w_lll(r_path, w_path, year, parameter, month=1):
 
-    lll, dist = loc_lat_lon(path, year, parameter)
-    lll_path = path + "loc_lat_lon/lll_" + str(year) + "_" + parameter + ".csv"
+    lll, dist = loc_lat_lon(r_path, year, parameter, month=month)
+    month = str(month).zfill(2)
+    lll_path = w_path + "lll_" + str(year) + "_" + month + "_" + parameter + ".csv"
     with open(lll_path, "w") as f:
         csv_out = csv.writer(f)
         csv_out.writerow(["loc", "lat", "lon"])
         for row in lll:
             csv_out.writerow(row)
 
-    lll_path = path + "loc_lat_lon/dist_" + str(year) + ".csv"
+    lll_path = w_path + "dist_" + str(year) + "_" + month + ".csv"
     with open(lll_path, "w") as f:
         csv_out = csv.writer(f)
         csv_out.writerow(["removed", "total"])
@@ -158,67 +165,79 @@ class OpenaqData(object):
         self.lon = json_dict["coordinates"]["longitude"]
 
 
-def write_h5py(data_path, write_path, year: int):
+def w_h5py(data_path, write_path, year: int, month=1):
 
-    daily_list = _generate_daily_list(year)
+    daily_list = _generate_daily_list(year, month=month)
+    month = str(month).zfill(2)
+
     print("Overriding daily list. The following line should be commented")
     print("The year now has only 3 random days for testing")
 
     daily_list = ["2018-01-01/", "2018-06-05/", "2018-07-18/"]
 
-    write_path = write_path + str(year) + ".h5"
-
     #  Initialising with a none type data
 
-    with h5py.File(write_path, "w") as f:
-        data = OpenaqData(NO_DATA_DICT)
-        grp = data.location + "/" + data.parameter
+    # with h5py.File(write_path, "w") as f:
+    #     data = OpenaqData(NO_DATA_DICT)
+    #     grp = data.location + "/" + data.parameter
 
-        time = data.time.strftime("%Y/%M/%d %H:%M:%S")
-        value = data.value
-        unit = data.unit
-        avg_time = data.avg_time
-        avg_time_unit = data.avg_time_unit
-        lat = data.lat
-        lon = data.lon
+    #     time = data.time.strftime("%Y/%M/%d %H:%M:%S")
+    #     value = data.value
+    #     unit = data.unit
+    #     avg_time = data.avg_time
+    #     avg_time_unit = data.avg_time_unit
+    #     lat = data.lat
+    #     lon = data.lon
+
+    #     dtype = h5py.special_dtype(vlen=str)
+
+    #     arr_data = np.array(
+    #         [time, value, unit, avg_time, avg_time_unit, lat, lon], dtype=dtype
+    #     ).reshape(1, 7)
+
+    #     f.create_dataset(grp, data=arr_data, maxshape=(None, 7))
+
+    for each_day in tqdm(daily_list):
+        day_path = data_path + each_day
+        data = read_openaq_day(day_path)
 
         dtype = h5py.special_dtype(vlen=str)
 
-        arr_data = np.array(
-            [time, value, unit, avg_time, avg_time_unit, lat, lon], dtype=dtype
-        ).reshape(1, 7)
+        for each_data in data:
 
-        f.create_dataset(grp, data=arr_data, maxshape=(None, 7))
+            if each_data.location != "None":
+                time = each_data.time.strftime("%Y/%M/%d %H:%M:%S")
+                value = each_data.value
+                unit = each_data.unit
+                avg_time = each_data.avg_time
+                avg_time_unit = each_data.avg_time_unit
+                lat = each_data.lat
+                lon = each_data.lon
 
-    with h5py.File(write_path, "a") as f:
-        for each_day in tqdm(daily_list):
-            day_path = data_path + each_day
-            data = read_openaq_day(day_path)
+                arr_data = np.array(
+                    [time, value, unit, avg_time, avg_time_unit, lat, lon], dtype=dtype,
+                ).reshape(1, 7)
 
-            dtype = h5py.special_dtype(vlen=str)
+                loc = each_data.location.replace("/", "_slash_")
+                d_path = write_path + str(year) + "/" + month + "/"
 
-            for each_data in data:
-
-                if each_data.location is not None:
-                    time = each_data.time.strftime("%Y/%M/%d %H:%M:%S")
-                    value = each_data.value
-                    unit = each_data.unit
-                    avg_time = each_data.avg_time
-                    avg_time_unit = each_data.avg_time_unit
-                    lat = each_data.lat
-                    lon = each_data.lon
-
-                    arr_data = np.array(
-                        [time, value, unit, avg_time, avg_time_unit, lat, lon],
-                        dtype=dtype,
-                    ).reshape(1, 7)
-
-                    grp = each_data.location + "/" + each_data.parameter
+                if not os.path.isdir(d_path):
+                    os.mkdir(d_path)
+                f_name = loc + ".h5"
+                w_path = d_path + f_name
+                with h5py.File(w_path, "a") as f:
+                    grp = each_data.parameter
                     if grp in f:
                         f[grp].resize((f[grp].shape[0] + 1), axis=0)
                         f[grp][-1:] = arr_data
                     else:
                         f.create_dataset(grp, data=arr_data, maxshape=(None, 7))
+
+
+# def _read_h5py(path, parameter):
+#     with h5py.File(path, "r") as f:
+#         data =f[parameter][:,:]
+#         return data
 
 
 # #############################################
