@@ -5,8 +5,20 @@ from matplotlib import cm
 
 
 class ParameterMaps(object):
-    def __init__(self, loc_lat_lon: set, degree=1):
+    def __init__(
+        self,
+        loc_lat_lon: set,
+        parameter: str,
+        year: int,
+        month: int,
+        w_path: str,
+        degree=1,
+    ):
         self.loc_lat_lon = loc_lat_lon
+        self.parameter = parameter
+        self.year = year
+        self.month = str(month).zfill(2)
+        self.w_path = w_path
         self.degree = degree
         _lat, _lon, _z = self._generate_grid(degree=degree)
         self._lat = _lat
@@ -22,9 +34,20 @@ class ParameterMaps(object):
         cmap = cm.get_cmap("Spectral", 5)
         color_bar = ax.pcolormesh(self._lon, self._lat, self._z, cmap=cmap)
 
-        ax.set_title("Number of stations in each grid")
+        ax.set_title(
+            f"Stations in each grid for {self.parameter} | year {self.year} | month {self.month}"
+        )
         plt.colorbar(color_bar, fraction=0.023, pad=0.04)
-        plt.show()
+        fname = (
+            "coverage_"
+            + self.parameter
+            + "_"
+            + str(self.year)
+            + "_"
+            + str(self.month)
+            + ".png"
+        )
+        plt.savefig(self.w_path + str(self.year) + "/" + self.month + "/" + fname)
 
     def _generate_grid(self, degree):
 
@@ -43,5 +66,5 @@ class ParameterMaps(object):
                 _z[index_lat, index_lon] = 1
             else:
                 _z[index_lat, index_lon] += 1
-        print(np.nanmax(_z))
+
         return _lat, _lon, _z

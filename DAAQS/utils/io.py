@@ -46,8 +46,12 @@ def _generate_daily_list(year, **kwargs):
 
     if "month" in kwargs.keys():
         month = kwargs["month"]
-        strt_date = datetime(year, month, 1)
-        end_date = datetime(year, month + 1, 1)
+        if month == 12:
+            strt_date = datetime(year, month, 1)
+            end_date = datetime(year + 1, 1, 1)
+        else:
+            strt_date = datetime(year, month, 1)
+            end_date = datetime(year, month + 1, 1)
 
     num_days = end_date - strt_date
 
@@ -110,15 +114,39 @@ def w_lll(r_path, w_path, year, parameter, month=1):
 
     lll, dist = loc_lat_lon(r_path, year, parameter, month=month)
     month = str(month).zfill(2)
-    lll_path = w_path + "lll_" + str(year) + "_" + month + "_" + parameter + ".csv"
+    lll_path = (
+        w_path
+        + str(year)
+        + "/"
+        + month
+        + "/lll_"
+        + str(year)
+        + "_"
+        + month
+        + "_"
+        + parameter
+        + ".csv"
+    )
     with open(lll_path, "w") as f:
         csv_out = csv.writer(f)
         csv_out.writerow(["loc", "lat", "lon"])
         for row in lll:
             csv_out.writerow(row)
 
-    lll_path = w_path + "dist_" + str(year) + "_" + month + ".csv"
-    with open(lll_path, "w") as f:
+    dist_path = (
+        w_path
+        + str(year)
+        + "/"
+        + month
+        + "/dist_"
+        + str(year)
+        + "_"
+        + month
+        + "_"
+        + ".csv"
+    )
+
+    with open(dist_path, "w") as f:
         csv_out = csv.writer(f)
         csv_out.writerow(["removed", "total"])
         for row in dist:
@@ -219,7 +247,7 @@ def w_h5py(data_path, write_path, year: int, month=1):
                 ).reshape(1, 7)
 
                 loc = each_data.location.replace("/", "_slash_")
-                d_path = write_path + str(year) + "/" + month + "/"
+                d_path = write_path + str(year) + "/" + month + "/loc"
 
                 if not os.path.isdir(d_path):
                     os.mkdir(d_path)
@@ -232,6 +260,61 @@ def w_h5py(data_path, write_path, year: int, month=1):
                         f[grp][-1:] = arr_data
                     else:
                         f.create_dataset(grp, data=arr_data, maxshape=(None, 7))
+
+
+def r_lll(r_path, year, parameter, month):
+    month = str(month).zfill(2)
+    lll_path = (
+        r_path
+        + str(year)
+        + "/"
+        + month
+        + "/lll_"
+        + str(year)
+        + "_"
+        + month
+        + "_"
+        + parameter
+        + ".csv"
+    )
+    dist_path = (
+        r_path
+        + str(year)
+        + "/"
+        + month
+        + "/dist_"
+        + str(year)
+        + "_"
+        + month
+        + "_"
+        + ".csv"
+    )
+
+    lll_set = set()
+    with open(lll_path, "r") as f:
+        # Remove header [loc, lat, lon]
+        f.readline()
+        for line in f:
+
+            # Reverse technique had to be implemented because location had comma
+
+            rev_line = line[::-1]
+            r_lon, r_lat, r_loc = rev_line.split(",", 2)
+            lll = (r_loc[::-1], float(r_lat[::-1]), float(r_lon[::-1]))
+            lll_set.add(lll)
+
+    dist_list = []
+
+    with open(dist_path, "r") as f:
+        # Remove Header [removed, total]
+        f.readline()
+        for line in f:
+            reject, total = line.split(",")
+
+            dist = [int(reject), int(total)]
+            dist_list.append(dist)
+
+    return lll_set, np.stack(dist_list)
 
 
 # def _read_h5py(path, parameter):
