@@ -1,0 +1,7 @@
+six
+
+[Numpy output]
+netCDF4
+
+[XArray output]
+xarray

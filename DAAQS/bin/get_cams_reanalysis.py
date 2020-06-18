@@ -7,31 +7,37 @@ import cdsapi
 import yaml
 
 """
-create an ADS account at https://ads.atmosphere.copernicus.eu 
+create an ADS account at https://ads.atmosphere.copernicus.eu
 and load ADS credentials.
 """
 
-with open("~/.cdsapirc", "r") as f:
+with open("/Users/mohit/.cdsapirc", "r") as f:
     credentials = yaml.safe_load(f)
 
 c = cdsapi.Client(url=credentials["url"], key=credentials["key"])
 
-DATADIR = "./data"
+
+# The directory to store data, A data folder with a sub directory as CAMS_data is created.
+# data is also added to the gitignore file.
+
+DATADIR = "data/CAMS_data"
+
+
 variables = [
-    "surface_pressure",
-    "temperature",
-    "carbon_monoxide",
-    "nitrogen_dioxide",
-    "ozone",
+    # "surface_pressure",
+    # "temperature",
+    # "carbon_monoxide",
+    # "nitrogen_dioxide",
+    # "ozone",
     "particulate_matter_10um",
-    "particulate_matter_2.5um",
-    "sulphur_dioxide",
+    # "particulate_matter_2.5um",
+    # "sulphur_dioxide",
 ]
 to_convert = ["carbon_monoxide", "nitrogen_dioxide", "ozone", "sulphur_dioxide"]
 R = 287.058
 
 start = datetime.datetime.strptime("2019-01-01", "%Y-%m-%d")
-end = datetime.datetime.strptime("2019-12-31", "%Y-%m-%d")
+end = datetime.datetime.strptime("2020-01-01", "%Y-%m-%d")
 date_generated = [
     start + datetime.timedelta(days=x) for x in range(0, (end - start).days)
 ]
