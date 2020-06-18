@@ -1,10 +1,15 @@
+boto3==1.14.5
+botocore==1.17.5
 cartopy==0.18.0
 cdo==1.5.3
 cdsapi==0.2.7
 certifi==2020.4.5.2
 chardet==3.0.4
 cycler==0.10.0
+docutils==0.15.2
+h5py==2.10.0
 idna==2.9
+jmespath==0.10.0
 kiwisolver==1.2.0
 matplotlib==3.2.1
 numpy==1.18.5
@@ -13,6 +18,7 @@ pyshp==2.1.0
 python-dateutil==2.8.1
 pyyaml==5.3.1
 requests==2.23.0
+s3transfer==0.3.3
 scipy==1.4.1
 shapely==1.7.0
 six==1.15.0

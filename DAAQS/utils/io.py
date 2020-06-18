@@ -69,32 +69,52 @@ def loc_lat_lon(path, year, parameter):
     None
     """
 
-    daily_list = _generate_daily_list(year)
+    # daily_list = _generate_daily_list(year)
 
     # Comment Later
-    # print("Overriding daily list. The following line should be commented")
-    # print("The year year has 3 random days for testing")
-    # daily_list = ["2018-01-01/", "2018-06-05/", "2018-07-18/"]
+    print("Overriding daily list. The following line should be commented")
+    print("The year has 3 random days for testing")
+    daily_list = ["2018-01-01/", "2018-06-05/", "2018-07-18/"]
 
     loc_lat_lon = set()
+    data_dist = []
+
     for each in tqdm(daily_list):
         daily_path = path + each
         data = read_openaq_day(daily_path)
+        counter = 0
         for each in data:
-            if each.parameter == parameter:
+            if each.location == "None":
+                counter += 1
+
+            if parameter == "all":
                 loc_lat_lon.add((each.location, each.lat, each.lon))
 
-    return loc_lat_lon
+            elif each.parameter == parameter:
+                loc_lat_lon.add((each.location, each.lat, each.lon))
+
+        # print(f"The number of unused datapoints are {counter}")
+        # print(f"The total number of datapoints are {len(data)}")
+        data_dist.append((counter, len(data)))
+
+    return loc_lat_lon, data_dist
 
 
 def write_lll(path, year, parameter):
 
-    lll = loc_lat_lon(path, year, parameter)
-    path = path + "loc_lat_lon/lll_" + year + "_" + parameter + ".csv"
-    with open(path, "w") as f:
+    lll, dist = loc_lat_lon(path, year, parameter)
+    lll_path = path + "loc_lat_lon/lll_" + str(year) + "_" + parameter + ".csv"
+    with open(lll_path, "w") as f:
         csv_out = csv.writer(f)
         csv_out.writerow(["loc", "lat", "lon"])
         for row in lll:
+            csv_out.writerow(row)
+
+    lll_path = path + "loc_lat_lon/dist_" + str(year) + ".csv"
+    with open(lll_path, "w") as f:
+        csv_out = csv.writer(f)
+        csv_out.writerow(["removed", "total"])
+        for row in dist:
             csv_out.writerow(row)
 
 

@@ -18,11 +18,6 @@ day = "2018-01-01/"
 path = root_path+data_path
 loc_lat_lon = loc_lat_lon(path, 2018, "pm10")
 
-
-
-
-
-
 path = root_path + data_path
 write_path = root_path+"DAAQS_data/processed/openaq/"
 
@@ -32,4 +27,3 @@ write_path = root_path+"DAAQS_data/processed/openaq/"
 # ParameterMaps(loc_lat_lon)
 
 write_h5py(path, write_path, 2018)
-
