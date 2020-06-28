@@ -326,24 +326,30 @@ def w_gzip(data_path, write_path, year, month=1):
         day_path = data_path + each_day
         data = read_openaq_day(day_path)
 
+        location_dict = dict()
+        counter = 0
         for each_data in data:
-            print(each_data["location"])
             if each_data["location"] != "None":
-
+                counter += 1
                 loc = each_data["location"].replace("/", "_slash_")
-                d_path = write_path + str(year) + "/" + month + "/loc"
+                if loc not in location_dict:
+                    location_dict[loc] = [json.dumps(data)]
+                else:
+                    location_dict[loc].append(json.dumps(data))
+                print(location_dict)
+            print(counter)
 
-                if not os.path.isdir(d_path):
-                    os.mkdir(d_path)
-
-                f_name = loc + ".gz"
-                w_path = d_path + f_name
-
-                json_str = json.dumps(data) + "\n"
-                json_bytes = json_str.encode("utf-8")
-
-                with gzip.GzipFile(w_path, "ab") as f:
-                    f.write(json_bytes)
+        for each_loc in location_dict:
+            d_path = write_path + str(year) + "/" + month + "/loc"
+            if not os.path.isdir(d_path):
+                os.mkdir(d_path)
+            f_name = loc + ".ndjson"
+            w_path = d_path + f_name
+            json_str = json.dumps(data) + "\n"
+            json_bytes = json_str.encode("utf-8")
+            with open(w_path, "a") as f:
+                # with gzip.GzipFile(w_path, "ab") as f:
+                f.write(json_str)
 
 
 def r_lll(r_path, year, parameter, month):
