@@ -1,7 +1,7 @@
-from DAAQS import w_h5py, w_lll
+from DAAQS import w_gzip, w_lll
 
 
-# ocal path
+# local path
 
 root_path = "/Users/mohit/Documents/DAAQS/data/"
 data_path = "openaq/"
@@ -24,5 +24,5 @@ r_path = root_path + data_path
 for year in [2018, 2019]:
     for month in range(1, 13):
         parameter = "pm10"
-        #w_h5py(r_path, w_path, year, month)
-        w_lll(r_path, w_path, year, parameter, month)
+        w_gzip(r_path, w_path, year, month)
+        #w_lll(r_path, w_path, year, parameter, month)

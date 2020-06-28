@@ -8,7 +8,7 @@ import h5py
 import numpy as np
 from tqdm import tqdm
 
-from DAAQS.utils.constants import NO_DATA_DICT
+from DAAQS.utils.constants import MAX_ATTR_DICT, MIN_ATTR_DICT
 
 
 def _read_gzip_file(path):
@@ -20,11 +20,11 @@ def _read_gzip_file(path):
             single_dict = json.loads(each_json)
 
             try:
-                oaq = OpenaqData(single_dict)
+                oaq = OpenaqDataMin(single_dict)
             except KeyError:
-                oaq = OpenaqData(NO_DATA_DICT)
+                oaq = OpenaqDataMin(MIN_ATTR_DICT)
             finally:
-                data.append(oaq)
+                data.append(oaq.dict_data())
     return data
 
 
@@ -153,7 +153,47 @@ def w_lll(r_path, w_path, year, parameter, month=1):
             csv_out.writerow(row)
 
 
-class OpenaqData(object):
+class OpenaqDataMax(object):
+    """
+    The class stores the raw json value of openAQ data
+    """
+
+    __slots__ = (
+        "location",
+        "time",
+        "parameter",
+        "value",
+        "unit",
+        "avg_time",
+        "avg_time_unit",
+        "lat",
+        "lon",
+    )
+
+    def __init__(self, json_dict, MIN_ATTR_DICT):
+        """
+        Standardised storage for data.
+        Time is always stored  in 'UTC'
+        Standard units are as follows:
+
+        PM10 = ug/m3
+        Ozone =
+        SO2 =
+        averaging time is in hours
+        """
+        self.location = json_dict["location"]
+        time = json_dict["date"]["utc"]
+        self.time = datetime.strptime(time, "%Y-%m-%dT%H:%M:%S.%fZ")
+        self.parameter = json_dict["parameter"]
+        self.value = json_dict["value"]
+        self.unit = json_dict["unit"]
+        self.avg_time = json_dict["averagingPeriod"]["value"]
+        self.avg_time_unit = json_dict["averagingPeriod"]["unit"]
+        self.lat = json_dict["coordinates"]["latitude"]
+        self.lon = json_dict["coordinates"]["longitude"]
+
+
+class OpenaqDataMin(object):
     """
     The class stores the raw json value of openAQ data
     """
@@ -182,15 +222,24 @@ class OpenaqData(object):
         averaging time is in hoursq
         """
         self.location = json_dict["location"]
-        time = json_dict["date"]["utc"]
-        self.time = datetime.strptime(time, "%Y-%m-%dT%H:%M:%S.%fZ")
+        self.time = json_dict["date"]["utc"]
+        # self.time = datetime.strptime(time, "%Y-%m-%dT%H:%M:%S.%fZ")
         self.parameter = json_dict["parameter"]
         self.value = json_dict["value"]
-        self.unit = json_dict["unit"]
-        self.avg_time = json_dict["averagingPeriod"]["value"]
-        self.avg_time_unit = json_dict["averagingPeriod"]["unit"]
         self.lat = json_dict["coordinates"]["latitude"]
         self.lon = json_dict["coordinates"]["longitude"]
+
+    def dict_data(self):
+        data = {
+            "location": self.location,
+            "time": self.time,
+            "parameter": self.parameter,
+            "value": self.value,
+            "lat": self.lat,
+            "lon": self.lon,
+        }
+
+        return data
 
 
 def w_h5py(data_path, write_path, year: int, month=1):
@@ -259,7 +308,42 @@ def w_h5py(data_path, write_path, year: int, month=1):
                         f[grp].resize((f[grp].shape[0] + 1), axis=0)
                         f[grp][-1:] = arr_data
                     else:
-                        f.create_dataset(grp, data=arr_data, maxshape=(None, 7))
+                        f.create_dataset(
+                            grp, data=arr_data, maxshape=(None, 7), compression="gzip"
+                        )
+
+
+def w_gzip(data_path, write_path, year, month=1):
+
+    daily_list = _generate_daily_list(year, month=month)
+    month = str(month).zfill(2)
+
+    print("Overriding daily list. The following line should be commented")
+    print("The year now has only 3 random days for testing")
+
+    daily_list = ["2018-01-01/", "2018-06-05/", "2018-07-18/"]
+    for each_day in tqdm(daily_list):
+        day_path = data_path + each_day
+        data = read_openaq_day(day_path)
+
+        for each_data in data:
+            print(each_data["location"])
+            if each_data["location"] != "None":
+
+                loc = each_data["location"].replace("/", "_slash_")
+                d_path = write_path + str(year) + "/" + month + "/loc"
+
+                if not os.path.isdir(d_path):
+                    os.mkdir(d_path)
+
+                f_name = loc + ".gz"
+                w_path = d_path + f_name
+
+                json_str = json.dumps(data) + "\n"
+                json_bytes = json_str.encode("utf-8")
+
+                with gzip.GzipFile(w_path, "ab") as f:
+                    f.write(json_bytes)
 
 
 def r_lll(r_path, year, parameter, month):
