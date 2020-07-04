@@ -24,7 +24,7 @@ def _read_gzip_file(path):
             except KeyError:
                 oaq = OpenaqDataMin(MIN_ATTR_DICT)
             finally:
-                data.append(oaq.dict_data())
+                data.append(oaq)
     return data
 
 
@@ -88,6 +88,7 @@ def loc_lat_lon(path, year, parameter, month):
 
     loc_lat_lon = set()
     data_dist = []
+    lll_list = []
 
     for each in tqdm(daily_list):
         daily_path = path + each
@@ -106,51 +107,37 @@ def loc_lat_lon(path, year, parameter, month):
         # print(f"The number of unused datapoints are {counter}")
         # print(f"The total number of datapoints are {len(data)}")
         data_dist.append((counter, len(data)))
+        lll_list.append(loc_lat_lon)
 
-    return loc_lat_lon, data_dist
+    return lll_list, data_dist, daily_list
 
 
 def w_lll(r_path, w_path, year, parameter, month=1):
 
-    lll, dist = loc_lat_lon(r_path, year, parameter, month=month)
-    month = str(month).zfill(2)
-    lll_path = (
-        w_path
-        + str(year)
-        + "/"
-        + month
-        + "/lll_"
-        + str(year)
-        + "_"
-        + month
-        + "_"
-        + parameter
-        + ".csv"
-    )
-    with open(lll_path, "w") as f:
-        csv_out = csv.writer(f)
-        csv_out.writerow(["loc", "lat", "lon"])
-        for row in lll:
-            csv_out.writerow(row)
+    lll, dist, daily_list = loc_lat_lon(r_path, year, parameter, month=month)
+    for i in range(len(daily_list)):
+        each_day = daily_list[i]
+        directory = w_path + str(year) + "/" + str(each_day)
+        _make_dir(directory)
 
-    dist_path = (
-        w_path
-        + str(year)
-        + "/"
-        + month
-        + "/dist_"
-        + str(year)
-        + "_"
-        + month
-        + "_"
-        + ".csv"
-    )
+        lll_fname = "lll_" + str(each_day[:-1]) + "_" + parameter + ".csv"
 
-    with open(dist_path, "w") as f:
-        csv_out = csv.writer(f)
-        csv_out.writerow(["removed", "total"])
-        for row in dist:
-            csv_out.writerow(row)
+        lll_path = directory + lll_fname
+
+        with open(lll_path, "w") as f:
+            csv_out = csv.writer(f)
+            csv_out.writerow(["loc", "lat", "lon"])
+            for row in lll[i]:
+                csv_out.writerow(row)
+
+        dist_fname = "dist_" + str(each_day[:-1]) + ".csv"
+
+        dist_path = directory + dist_fname
+
+        with open(dist_path, "w") as f:
+            csv_out = csv.writer(f)
+            csv_out.writerow(["removed", "total"])
+            csv_out.writerow(dist[i])
 
 
 class OpenaqDataMax(object):
@@ -242,116 +229,6 @@ class OpenaqDataMin(object):
         return data
 
 
-def w_h5py(data_path, write_path, year: int, month=1):
-
-    daily_list = _generate_daily_list(year, month=month)
-    month = str(month).zfill(2)
-
-    print("Overriding daily list. The following line should be commented")
-    print("The year now has only 3 random days for testing")
-
-    daily_list = ["2018-01-01/", "2018-06-05/", "2018-07-18/"]
-
-    #  Initialising with a none type data
-
-    # with h5py.File(write_path, "w") as f:
-    #     data = OpenaqData(NO_DATA_DICT)
-    #     grp = data.location + "/" + data.parameter
-
-    #     time = data.time.strftime("%Y/%M/%d %H:%M:%S")
-    #     value = data.value
-    #     unit = data.unit
-    #     avg_time = data.avg_time
-    #     avg_time_unit = data.avg_time_unit
-    #     lat = data.lat
-    #     lon = data.lon
-
-    #     dtype = h5py.special_dtype(vlen=str)
-
-    #     arr_data = np.array(
-    #         [time, value, unit, avg_time, avg_time_unit, lat, lon], dtype=dtype
-    #     ).reshape(1, 7)
-
-    #     f.create_dataset(grp, data=arr_data, maxshape=(None, 7))
-
-    for each_day in tqdm(daily_list):
-        day_path = data_path + each_day
-        data = read_openaq_day(day_path)
-
-        dtype = h5py.special_dtype(vlen=str)
-
-        for each_data in data:
-
-            if each_data.location != "None":
-                time = each_data.time.strftime("%Y/%M/%d %H:%M:%S")
-                value = each_data.value
-                unit = each_data.unit
-                avg_time = each_data.avg_time
-                avg_time_unit = each_data.avg_time_unit
-                lat = each_data.lat
-                lon = each_data.lon
-
-                arr_data = np.array(
-                    [time, value, unit, avg_time, avg_time_unit, lat, lon], dtype=dtype,
-                ).reshape(1, 7)
-
-                loc = each_data.location.replace("/", "_slash_")
-                d_path = write_path + str(year) + "/" + month + "/loc"
-
-                if not os.path.isdir(d_path):
-                    os.mkdir(d_path)
-                f_name = loc + ".h5"
-                w_path = d_path + f_name
-                with h5py.File(w_path, "a") as f:
-                    grp = each_data.parameter
-                    if grp in f:
-                        f[grp].resize((f[grp].shape[0] + 1), axis=0)
-                        f[grp][-1:] = arr_data
-                    else:
-                        f.create_dataset(
-                            grp, data=arr_data, maxshape=(None, 7), compression="gzip"
-                        )
-
-
-def w_gzip(data_path, write_path, year, month=1):
-
-    daily_list = _generate_daily_list(year, month=month)
-    month = str(month).zfill(2)
-
-    print("Overriding daily list. The following line should be commented")
-    print("The year now has only 3 random days for testing")
-
-    daily_list = ["2018-01-01/", "2018-06-05/", "2018-07-18/"]
-    for each_day in tqdm(daily_list):
-        day_path = data_path + each_day
-        data = read_openaq_day(day_path)
-
-        location_dict = dict()
-        counter = 0
-        for each_data in data:
-            if each_data["location"] != "None":
-                counter += 1
-                loc = each_data["location"].replace("/", "_slash_")
-                if loc not in location_dict:
-                    location_dict[loc] = [json.dumps(data)]
-                else:
-                    location_dict[loc].append(json.dumps(data))
-                print(location_dict)
-            print(counter)
-
-        for each_loc in location_dict:
-            d_path = write_path + str(year) + "/" + month + "/loc"
-            if not os.path.isdir(d_path):
-                os.mkdir(d_path)
-            f_name = loc + ".ndjson"
-            w_path = d_path + f_name
-            json_str = json.dumps(data) + "\n"
-            json_bytes = json_str.encode("utf-8")
-            with open(w_path, "a") as f:
-                # with gzip.GzipFile(w_path, "ab") as f:
-                f.write(json_str)
-
-
 def r_lll(r_path, year, parameter, month):
     month = str(month).zfill(2)
     lll_path = (
@@ -405,6 +282,177 @@ def r_lll(r_path, year, parameter, month):
             dist_list.append(dist)
 
     return lll_set, np.stack(dist_list)
+
+
+def _make_dir(path):
+
+    if not os.path.exists(path):
+        os.mkdir(path)
+
+
+# def w_h5py(data_path, write_path, year: int, month=1):
+
+#     daily_list = _generate_daily_list(year, month=month)
+#     month = str(month).zfill(2)
+
+#     print("Overriding daily list. The following line should be commented")
+#     print("The year now has only 3 random days for testing")
+
+#     daily_list = ["2018-01-01/", "2018-06-05/", "2018-07-18/"]
+
+#     #  Initialising with a none type data
+
+#     # with h5py.File(write_path, "w") as f:
+#     #     data = OpenaqData(NO_DATA_DICT)
+#     #     grp = data.location + "/" + data.parameter
+
+#     #     time = data.time.strftime("%Y/%M/%d %H:%M:%S")
+#     #     value = data.value
+#     #     unit = data.unit
+#     #     avg_time = data.avg_time
+#     #     avg_time_unit = data.avg_time_unit
+#     #     lat = data.lat
+#     #     lon = data.lon
+
+#     #     dtype = h5py.special_dtype(vlen=str)
+
+#     #     arr_data = np.array(
+#     #         [time, value, unit, avg_time, avg_time_unit, lat, lon], dtype=dtype
+#     #     ).reshape(1, 7)
+
+#     #     f.create_dataset(grp, data=arr_data, maxshape=(None, 7))
+
+#     for each_day in tqdm(daily_list):
+#         day_path = data_path + each_day
+#         data = read_openaq_day(day_path)
+
+#         dtype = h5py.special_dtype(vlen=str)
+
+#         for each_data in data:
+
+#             if each_data.location != "None":
+#                 time = each_data.time.strftime("%Y/%M/%d %H:%M:%S")
+#                 value = each_data.value
+#                 unit = each_data.unit
+#                 avg_time = each_data.avg_time
+#                 avg_time_unit = each_data.avg_time_unit
+#                 lat = each_data.lat
+#                 lon = each_data.lon
+
+#                 arr_data = np.array(
+#                     [time, value, unit, avg_time, avg_time_unit, lat, lon], dtype=dtype,
+#                 ).reshape(1, 7)
+
+#                 loc = each_data.location.replace("/", "_slash_")
+#                 d_path = write_path + str(year) + "/" + month + "/loc"
+
+#                 if not os.path.isdir(d_path):
+#                     os.mkdir(d_path)
+#                 f_name = loc + ".h5"
+#                 w_path = d_path + f_name
+#                 with h5py.File(w_path, "a") as f:
+#                     grp = each_data.parameter
+#                     if grp in f:
+#                         f[grp].resize((f[grp].shape[0] + 1), axis=0)
+#                         f[grp][-1:] = arr_data
+#                     else:
+#                         f.create_dataset(
+#                             grp, data=arr_data, maxshape=(None, 7), compression="gzip"
+#                         )
+
+
+# def w_gzip(data_path, write_path, year, month=1):
+
+#     daily_list = _generate_daily_list(year, month=month)
+#     month = str(month).zfill(2)
+
+#     print("Overriding daily list. The following line should be commented")
+#     print("The year now has only 3 random days for testing")
+
+#     daily_list = ["2018-01-01/", "2018-06-05/", "2018-07-18/"]
+#     for each_day in tqdm(daily_list):
+#         day_path = data_path + each_day
+#         data = read_openaq_day(day_path)
+
+#         location_dict = dict()
+#         counter = 0
+#         print(f"This is the length of the data{len(data)}")
+#         for each_data in data:
+#             if each_data["location"] != "None":
+#                 counter += 1
+#                 loc = each_data["location"].replace("/", "_slash_")
+#                 if loc not in location_dict:
+#                     location_dict[loc] = [json.dumps(data)]
+#                 else:
+#                     location_dict[loc].append(json.dumps(data))
+#             print(counter)
+
+#         for each_loc in location_dict:
+#             d_path = write_path + str(year) + "/" + month + "/loc"
+#             if not os.path.isdir(d_path):
+#                 os.mkdir(d_path)
+#             f_name = loc + ".ndjson"
+#             w_path = d_path + f_name
+#             json_str = json.dumps(data) + "\n"
+#             json_bytes = json_str.encode("utf-8")
+#             with open(w_path, "a") as f:
+#                 # with gzip.GzipFile(w_path, "ab") as f:
+#                 f.write(json_str)
+
+
+# def r_lll(r_path, year, parameter, month):
+#     month = str(month).zfill(2)
+#     lll_path = (
+#         r_path
+#         + str(year)
+#         + "/"
+#         + month
+#         + "/lll_"
+#         + str(year)
+#         + "_"
+#         + month
+#         + "_"
+#         + parameter
+#         + ".csv"
+#     )
+#     dist_path = (
+#         r_path
+#         + str(year)
+#         + "/"
+#         + month
+#         + "/dist_"
+#         + str(year)
+#         + "_"
+#         + month
+#         + "_"
+#         + ".csv"
+#     )
+
+#     lll_set = set()
+#     with open(lll_path, "r") as f:
+#         # Remove header [loc, lat, lon]
+#         f.readline()
+#         for line in f:
+
+#             # Reverse technique had to be implemented because location had comma
+
+#             rev_line = line[::-1]
+#             r_lon, r_lat, r_loc = rev_line.split(",", 2)
+#             lll = (r_loc[::-1], float(r_lat[::-1]), float(r_lon[::-1]))
+#             lll_set.add(lll)
+
+#     dist_list = []
+
+#     with open(dist_path, "r") as f:
+#         # Remove Header [removed, total]
+#         f.readline()
+#         for line in f:
+#             reject, total = line.split(",")
+
+#             dist = [int(reject), int(total)]
+#             dist_list.append(dist)
+
+#     return lll_set, np.stack(dist_list)
 
 
 # def _read_h5py(path, parameter):

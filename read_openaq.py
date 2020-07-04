@@ -1,4 +1,4 @@
-from DAAQS import w_gzip, w_lll
+from DAAQS import w_lll
 
 
 # local path
@@ -23,6 +23,5 @@ r_path = root_path + data_path
 
 for year in [2018, 2019]:
     for month in range(1, 13):
-        parameter = "pm10"
-        w_gzip(r_path, w_path, year, month)
-        #w_lll(r_path, w_path, year, parameter, month)
+        parameter = "pm25"
+        w_lll(r_path, w_path, year, parameter, month)
