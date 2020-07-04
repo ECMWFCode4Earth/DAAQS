@@ -64,7 +64,7 @@ def _generate_daily_list(year, **kwargs):
     return daily_list
 
 
-def loc_lat_lon(path, year, parameter, month):
+def loc_lat_lon(year, parameter, month):
     """
 
     The parameters can be:
@@ -82,16 +82,16 @@ def loc_lat_lon(path, year, parameter, month):
     daily_list = _generate_daily_list(year, month=month)
     month = str(month).zfill(2)
     # Comment Later
-    print("Overriding daily list. The following line should be commented")
-    print("The year has 3 random days for testing")
-    daily_list = ["2018-01-01/", "2018-06-05/", "2018-07-18/"]
+    # print("Overriding daily list. The following line should be commented")
+    # print("The year has 3 random days for testing")
+    # daily_list = ["2018-01-01/", "2018-06-05/", "2018-07-18/"]
 
     loc_lat_lon = set()
     data_dist = []
     lll_list = []
 
     for each in tqdm(daily_list):
-        daily_path = path + each
+        daily_path = "data/raw/openaq/" + each
         data = read_openaq_day(daily_path)
         counter = 0
         for each in data:
@@ -112,12 +112,12 @@ def loc_lat_lon(path, year, parameter, month):
     return lll_list, data_dist, daily_list
 
 
-def w_lll(r_path, w_path, year, parameter, month=1):
+def w_lll(year, parameter, month=1):
 
-    lll, dist, daily_list = loc_lat_lon(r_path, year, parameter, month=month)
+    lll, dist, daily_list = loc_lat_lon(year, parameter, month=month)
     for i in range(len(daily_list)):
         each_day = daily_list[i]
-        directory = w_path + str(year) + "/" + str(each_day)
+        directory = "data/processed/lll_openaq/" + str(each_day)
         _make_dir(directory)
 
         lll_fname = "lll_" + str(each_day[:-1]) + "_" + parameter + ".csv"
@@ -190,9 +190,6 @@ class OpenaqDataMin(object):
         "time",
         "parameter",
         "value",
-        "unit",
-        "avg_time",
-        "avg_time_unit",
         "lat",
         "lon",
     )
