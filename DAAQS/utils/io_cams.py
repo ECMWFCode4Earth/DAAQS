@@ -5,7 +5,7 @@ from DAAQS.utils.constants import cams_dict
 
 def _read_cams(day, parameter):
     fname = cams_dict[parameter] + "_" + day + ".nc"
-    fdir = "/Users/mohit/Documents/DAAQS/data/cams/"
+    fdir = "./DAAQS/data/cams/"
     fpath = fdir + fname
     data = Dataset(fpath, "r")
 

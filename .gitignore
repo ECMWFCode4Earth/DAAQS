@@ -17,3 +17,6 @@
 # Remove PyCache
 
 __pycache__
+
+# Data 
+data
