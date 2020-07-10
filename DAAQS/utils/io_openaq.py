@@ -127,6 +127,7 @@ class OpenaqDataMax(object):
         "avg_time_unit",
         "lat",
         "lon",
+        "j_hour"
     )
 
     def __init__(self, json_dict, MIN_ATTR_DICT):
@@ -150,6 +151,12 @@ class OpenaqDataMax(object):
         self.avg_time_unit = json_dict["averagingPeriod"]["unit"]
         self.lat = json_dict["coordinates"]["latitude"]
         self.lon = json_dict["coordinates"]["longitude"]
+        self.j_hour = _julian_hour()
+
+    def _julian_hour(self):
+        strt_date = datetime(1900,1,1)
+        julian_hour = (self.time - strt_date)
+        return julian_hour
 
 class OpenaqDataMin(object):
     """
@@ -163,6 +170,7 @@ class OpenaqDataMin(object):
         "value",
         "lat",
         "lon",
+        "j_hour"
     )
 
     def __init__(self, json_dict):
@@ -183,6 +191,12 @@ class OpenaqDataMin(object):
         self.value = json_dict["value"]
         self.lat = json_dict["coordinates"]["latitude"]
         self.lon = json_dict["coordinates"]["longitude"]
+        self.j_hour = self._julian_hour()
+        
+    def _julian_hour(self):
+        strt_date = datetime(1900,1,1)
+        julian_hour = (self.time - strt_date)
+        return julian_hour
 
 
 def _make_dir(path):
@@ -192,12 +206,10 @@ def _make_dir(path):
 
 
 class OpenAQData(object):
-    def __init__(self, parameter, day, span):    
+    def __init__(self, day, span):    
         self.day = day
         self.dt = datetime.strptime(self.day, "%Y-%m-%d")
         self.span = span
-        self.parameter = parameter
-        self.data = self._read_openaq()
 
         if self.span == 0:
             self.dt_list = [self.dt]
@@ -205,7 +217,7 @@ class OpenAQData(object):
             self.dt_list  = [self.dt + timedelta(days = delta) for delta in range(-self.span,self.span+1)]
         else : 
             assert span >= 0 ,"Span is not non-negative integer"
-
+        self.data = self._read_openaq()
     def _read_openaq_day(self, day):
         str_day = datetime.strftime(day, "%Y-%m-%d")
         path = "data/raw/openaq/" + str_day + "/" 

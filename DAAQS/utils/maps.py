@@ -3,6 +3,10 @@ import matplotlib.pylab as plt
 import numpy as np
 from matplotlib import cm
 from DAAQS.utils.misc import generate_daily_list
+from DAAQS.utils.io_cams import CAMSData
+from DAAQS.utils.io_openaq import OpenAQData
+from DAAQS.utils.constants import oaq_cams_dict
+from DAAQS.utils.analysis import max_openaq_grid, max_cams_grid
 
 class ParameterMaps(object):
     def __init__(
@@ -52,8 +56,8 @@ class ParameterMaps(object):
 
         lat_lon = self.lat_lon
         dx = self.degree
-        dy = -self.degree
-        _lat, _lon = np.mgrid[slice(90, -90 + dy, dy), slice(-180, 180 + dx, dx)]
+        dy = self.degree
+        _lat, _lon = np.mgrid[slice(90, -90 - dy, -dy), slice(-180, 180 + dx, dx)]
 
         _z = np.NaN * np.ones_like(_lat)[:-1, :-1]
 
@@ -91,3 +95,100 @@ class ParameterMaps(object):
         for each_day in daily_list:
             ll_set = ll_set.union(self._read_ll_day(each_day[:-1]))
         return ll_set
+
+class CAMSMaxPlot(object):
+    def __init__(self, parameter, day):
+        z, lat, lon = max_cams_grid(parameter, day)
+        self.parameter = parameter
+        self.day = day
+        self.z = z
+        self.lat = lat
+        self.lon = lon 
+        self.vmax = 15000
+        self._generate_map()
+        
+    def _generate_map(self):
+        fig = plt.figure()
+        ax = fig.add_subplot(projection=ccrs.PlateCarree())
+        ax.coastlines()
+        cmap = cm.get_cmap("OrRd")
+        color_bar = ax.pcolormesh(self.lon, self.lat, self.z, cmap=cmap, vmin=0, vmax = self.vmax)
+
+        ax.set_title(
+            f"CAMS plot for max {self.parameter} on {self.day}"
+        )
+        plt.colorbar(color_bar, fraction=0.023, pad=0.04)
+        fname = (
+            "cams_max_"
+            + self.parameter
+            + "_"
+            + str(self.day)
+            + ".png"
+        )
+        plt.savefig("plots/cams/" + fname)
+        plt.close()
+
+class OpenAQMaxPlot(object):
+    def __init__(self, parameter, day):
+        z, lat, lon = max_openaq_grid(parameter, day)
+        self.parameter = parameter
+        self.day = day
+        self.z = z
+        self.lat = lat
+        self.lon = lon 
+        self.vmax = 15000
+        self._generate_map()
+        
+
+    def _generate_map(self):
+        fig = plt.figure()
+        ax = fig.add_subplot(projection=ccrs.PlateCarree())
+        ax.coastlines()
+        cmap = cm.get_cmap("OrRd")
+        color_bar = ax.pcolormesh(self.lon, self.lat, self.z, cmap=cmap, vmin = 0, vmax = self.vmax)
+
+        ax.set_title(
+            f"OpenAQ plot for max {self.parameter} on {self.day}"
+        )
+        plt.colorbar(color_bar, fraction=0.023, pad=0.04 )
+        fname = (
+            "openaq_max_"
+            + self.parameter
+            + "_"
+            + str(self.day)
+            + ".png"
+        )
+        plt.savefig("plots/openaq/" + fname)
+        plt.close()
+
+class MaxDiffPlot(object):
+    def __init__(self, parameter, day):
+        z_oaq, lat_oaq, lon_oaq = max_openaq_grid(parameter, day)
+        z_cams, lat_cams, lon_cams = max_cams_grid(parameter, day)
+        self.parameter = parameter
+        self.day = day
+        self.z = z_oaq - z_cams
+        self.lat = lat_oaq
+        self.lon = lon_oaq 
+        self._generate_map()
+
+    def _generate_map(self):
+        fig = plt.figure()
+        ax = fig.add_subplot(projection=ccrs.PlateCarree())
+        ax.coastlines()
+        cmap = cm.get_cmap("OrRd")
+        color_bar = ax.pcolormesh(self.lon, self.lat, self.z)
+
+        ax.set_title(
+            f"Max Diff plot for {self.parameter} on {self.day}"
+        )
+        plt.colorbar(color_bar, fraction=0.023, pad=0.04)
+        fname = (
+            "max_diff"
+            + self.parameter
+            + "_"
+            + str(self.day)
+            + ".png"
+        )
+        plt.savefig("plots/difference/" + fname)
+        plt.close()
