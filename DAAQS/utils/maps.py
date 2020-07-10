@@ -17,7 +17,7 @@ class ParameterMaps(object):
         self.month = month
         self.str_month = str(self.month).zfill(2)
         self.degree = degree
-        self.loc_lat_lon = self._read_lll_month()
+        self.lat_lon = self._read_ll_month()
         _lat, _lon, _z = self._generate_grid(degree=degree)
         self._lat = _lat
         self._lon = _lon
@@ -46,50 +46,48 @@ class ParameterMaps(object):
             + ".png"
         )
         plt.savefig("plots/coverage/" + fname)
+        plt.close()
 
     def _generate_grid(self, degree):
 
-        loc_lat_lon = self.loc_lat_lon
+        lat_lon = self.lat_lon
         dx = self.degree
         dy = -self.degree
         _lat, _lon = np.mgrid[slice(90, -90 + dy, dy), slice(-180, 180 + dx, dx)]
 
         _z = np.NaN * np.ones_like(_lat)[:-1, :-1]
 
-        for each in loc_lat_lon:
-            index_lon = int((each[2] + 180) / dx)
-            index_lat = int((each[1] - 90) / dy)
-
+        for each in lat_lon:
+            index_lon = int((each[1] + 180) / dx)
+            index_lat = int((each[0] - 90) / dy)
+    
             if np.isnan(_z[index_lat, index_lon]):
                 _z[index_lat, index_lon] = 1
             else:
+                
                 _z[index_lat, index_lon] += 1
-
         return _lat, _lon, _z
 
-    def _read_lll_day(self, day ):
-        f_path = "data/processed/lll_openaq/" + day + "/lll_"+day+"_"+self.parameter+".csv"
+    def _read_ll_day(self, day ):
+        f_path = "data/processed/ll_openaq/" + day + "/ll_"+day+"_"+self.parameter+".csv"
         with open(f_path, "r") as f:
             
             # Get rid of header
             f.readline()
 
-            lll_set = set()
+            ll_set = set()
             for each_line in f:
-                
-                # Use reverse technique
                 try:
-                    lon , lat, loc = each_line[::-1].split(",",2)
-                    lll_set.add((loc[::-1],float(lat[::-1]),float(lon[::-1])))
+                    lat, lon = each_line.split(",")
+                    ll_set.add((float(lat),float(lon)))
                 except:
-                    print(each_line[::-1].split(",",3))
+                    print(f"Exception in lat and lon {each_line}")
                     
+        return ll_set
 
-        return lll_set
-
-    def _read_lll_month(self):
+    def _read_ll_month(self):
         daily_list = generate_daily_list(self.year, month = self.month)
-        lll_set = set()
+        ll_set = set()
         for each_day in daily_list:
-            lll_set = lll_set.union(self._read_lll_day(each_day[:-1]))
-        return lll_set
+            ll_set = ll_set.union(self._read_ll_day(each_day[:-1]))
+        return ll_set

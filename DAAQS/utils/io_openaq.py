@@ -11,34 +11,6 @@ from tqdm import tqdm
 from DAAQS.utils.constants import MAX_ATTR_DICT, MIN_ATTR_DICT
 
 
-def _read_gzip_file(path):
-
-    with gzip.GzipFile(path, "r") as jsonzip:
-        data = []
-
-        for each_json in jsonzip:
-            single_dict = json.loads(each_json)
-
-            try:
-                oaq = OpenaqDataMin(single_dict)
-            except KeyError:
-                oaq = OpenaqDataMin(MIN_ATTR_DICT)
-            finally:
-                data.append(oaq)
-    return data
-
-
-def read_openaq_day(path):
-    # strt_time = time.time()
-    file_list = [x for x in os.listdir(path) if x.split(".")[-1] == "gz"]
-    data = []
-    for each in file_list:
-        fpath = path + each
-        data.extend(_read_gzip_file(fpath))
-    # print(f"The time taken to read one day is {time.time()-strt_time}")
-    return data
-
-
 def _generate_daily_list(year, **kwargs):
 
     strt_date = datetime(year, 1, 1)
@@ -64,7 +36,7 @@ def _generate_daily_list(year, **kwargs):
     return daily_list
 
 
-def loc_lat_lon(year, parameter, month):
+def lat_lon(year, parameter, month):
     """
 
     The parameters can be:
@@ -86,9 +58,9 @@ def loc_lat_lon(year, parameter, month):
     # print("The year has 3 random days for testing")
     # daily_list = ["2018-01-01/", "2018-06-05/", "2018-07-18/"]
 
-    loc_lat_lon = set()
+    lat_lon = set()
     data_dist = []
-    lll_list = []
+    ll_list = []
 
     for each in tqdm(daily_list):
         daily_path = "data/raw/openaq/" + each
@@ -99,35 +71,35 @@ def loc_lat_lon(year, parameter, month):
                 counter += 1
 
             if parameter == "all":
-                loc_lat_lon.add((each.location, each.lat, each.lon))
+                lat_lon.add((each.lat, each.lon))
 
             elif each.parameter == parameter:
-                loc_lat_lon.add((each.location, each.lat, each.lon))
+                lat_lon.add((each.lat, each.lon))
 
         # print(f"The number of unused datapoints are {counter}")
         # print(f"The total number of datapoints are {len(data)}")
         data_dist.append((counter, len(data)))
-        lll_list.append(loc_lat_lon)
+        ll_list.append(lat_lon)
 
-    return lll_list, data_dist, daily_list
+    return ll_list, data_dist, daily_list
 
 
-def w_lll(year, parameter, month=1):
+def w_ll(year, parameter, month=1):
 
-    lll, dist, daily_list = loc_lat_lon(year, parameter, month=month)
+    ll, dist, daily_list = lat_lon(year, parameter, month=month)
     for i in range(len(daily_list)):
         each_day = daily_list[i]
-        directory = "data/processed/lll_openaq/" + str(each_day)
+        directory = "data/processed/ll_openaq/" + str(each_day)
         _make_dir(directory)
 
-        lll_fname = "lll_" + str(each_day[:-1]) + "_" + parameter + ".csv"
+        ll_fname = "ll_" + str(each_day[:-1]) + "_" + parameter + ".csv"
 
-        lll_path = directory + lll_fname
+        ll_path = directory + ll_fname
 
-        with open(lll_path, "w") as f:
+        with open(ll_path, "w") as f:
             csv_out = csv.writer(f)
-            csv_out.writerow(["loc", "lat", "lon"])
-            for row in lll[i]:
+            csv_out.writerow(["lat", "lon"])
+            for row in ll[i]:
                 csv_out.writerow(row)
 
         dist_fname = "dist_" + str(each_day[:-1]) + ".csv"
@@ -179,7 +151,6 @@ class OpenaqDataMax(object):
         self.lat = json_dict["coordinates"]["latitude"]
         self.lon = json_dict["coordinates"]["longitude"]
 
-
 class OpenaqDataMin(object):
     """
     The class stores the raw json value of openAQ data
@@ -206,79 +177,12 @@ class OpenaqDataMin(object):
         averaging time is in hoursq
         """
         self.location = json_dict["location"]
-        self.time = json_dict["date"]["utc"]
-        # self.time = datetime.strptime(time, "%Y-%m-%dT%H:%M:%S.%fZ")
+        time = json_dict["date"]["utc"]
+        self.time = datetime.strptime(time, "%Y-%m-%dT%H:%M:%S.%fZ")
         self.parameter = json_dict["parameter"]
         self.value = json_dict["value"]
         self.lat = json_dict["coordinates"]["latitude"]
         self.lon = json_dict["coordinates"]["longitude"]
-
-    def dict_data(self):
-        data = {
-            "location": self.location,
-            "time": self.time,
-            "parameter": self.parameter,
-            "value": self.value,
-            "lat": self.lat,
-            "lon": self.lon,
-        }
-
-        return data
-
-
-def r_lll(r_path, year, parameter, month):
-    month = str(month).zfill(2)
-    lll_path = (
-        r_path
-        + str(year)
-        + "/"
-        + month
-        + "/lll_"
-        + str(year)
-        + "_"
-        + month
-        + "_"
-        + parameter
-        + ".csv"
-    )
-    dist_path = (
-        r_path
-        + str(year)
-        + "/"
-        + month
-        + "/dist_"
-        + str(year)
-        + "_"
-        + month
-        + "_"
-        + ".csv"
-    )
-
-    lll_set = set()
-    with open(lll_path, "r") as f:
-        # Remove header [loc, lat, lon]
-        f.readline()
-        for line in f:
-
-            # Reverse technique had to be implemented because location had comma
-
-            rev_line = line[::-1]
-            r_lon, r_lat, r_loc = rev_line.split(",", 2)
-            lll = (r_loc[::-1], float(r_lat[::-1]), float(r_lon[::-1]))
-            lll_set.add(lll)
-
-    dist_list = []
-
-    with open(dist_path, "r") as f:
-        # Remove Header [removed, total]
-        f.readline()
-        for line in f:
-            reject, total = line.split(",")
-
-            dist = [int(reject), int(total)]
-            dist_list.append(dist)
-
-    return lll_set, np.stack(dist_list)
 
 
 def _make_dir(path):
@@ -286,6 +190,162 @@ def _make_dir(path):
     if not os.path.exists(path):
         os.mkdir(path)
 
+
+class OpenAQData(object):
+    def __init__(self, parameter, day, span):    
+        self.day = day
+        self.dt = datetime.strptime(self.day, "%Y-%m-%d")
+        self.span = span
+        self.parameter = parameter
+        self.data = self._read_openaq()
+
+        if self.span == 0:
+            self.dt_list = [self.dt]
+        elif span > 0 :
+            self.dt_list  = [self.dt + timedelta(days = delta) for delta in range(-self.span,self.span+1)]
+        else : 
+            assert span >= 0 ,"Span is not non-negative integer"
+
+    def _read_openaq_day(self, day):
+        str_day = datetime.strftime(day, "%Y-%m-%d")
+        path = "data/raw/openaq/" + str_day + "/" 
+        file_list = [x for x in os.listdir(path) if x.split(".")[-1] == "gz"]
+        data = []
+        for each in file_list:
+            fpath = path + each
+            data.extend(self._read_gzip_file(fpath))
+        # print(f"The time taken to read one day is {time.time()-strt_time}")
+        return data
+
+    def _read_openaq(self):
+        list_data = []
+        for each_day in self.dt_list:
+            list_data.append(self._read_openaq_day(each_day))
+
+        return list_data
+
+    def _read_gzip_file(self, path):
+        
+        with gzip.GzipFile(path, "r") as jsonzip:
+            data = []
+
+            for each_json in jsonzip:
+                single_dict = json.loads(each_json)
+
+                try:
+                    oaq = OpenaqDataMin(single_dict)
+                except KeyError:
+                    oaq = OpenaqDataMin(MIN_ATTR_DICT)
+                finally:
+                    data.append(oaq)
+        return data
+
+
+
+###############
+
+
+
+# def r_lll(r_path, year, parameter, month):
+#     month = str(month).zfill(2)
+#     lll_path = (
+#         r_path
+#         + str(year)
+#         + "/"
+#         + month
+#         + "/lll_"
+#         + str(year)
+#         + "_"
+#         + month
+#         + "_"
+#         + parameter
+#         + ".csv"
+#     )
+#     dist_path = (
+#         r_path
+#         + str(year)
+#         + "/"
+#         + month
+#         + "/dist_"
+#         + str(year)
+#         + "_"
+#         + month
+#         + "_"
+#         + ".csv"
+#     )
+
+#     lll_set = set()
+#     with open(lll_path, "r") as f:
+#         # Remove header [loc, lat, lon]
+#         f.readline()
+#         for line in f:
+
+#             # Reverse technique had to be implemented because location had comma
+
+#             rev_line = line[::-1]
+#             r_lon, r_lat, r_loc = rev_line.split(",", 2)
+#             lll = (r_loc[::-1], float(r_lat[::-1]), float(r_lon[::-1]))
+#             lll_set.add(lll)
+
+#     dist_list = []
+
+#     with open(dist_path, "r") as f:
+#         # Remove Header [removed, total]
+#         f.readline()
+#         for line in f:
+#             reject, total = line.split(",")
+
+#             dist = [int(reject), int(total)]
+#             dist_list.append(dist)
+
+#     return lll_set, np.stack(dist_list)
+
+# def loc_lat_lon(year, parameter, month):
+#     """
+
+#     The parameters can be:
+#     pm25
+#     pm10
+#     so2
+#     no2
+#     o3
+#     co
+#     bc
+#     None
+#     """
+
+#     # daily_list = _generate_daily_list(year)
+#     daily_list = _generate_daily_list(year, month=month)
+#     month = str(month).zfill(2)
+#     # Comment Later
+#     # print("Overriding daily list. The following line should be commented")
+#     # print("The year has 3 random days for testing")
+#     # daily_list = ["2018-01-01/", "2018-06-05/", "2018-07-18/"]
+
+#     loc_lat_lon = set()
+#     data_dist = []
+#     lll_list = []
+
+#     for each in tqdm(daily_list):
+#         daily_path = "data/raw/openaq/" + each
+#         data = read_openaq_day(daily_path)
+#         counter = 0
+#         for each in data:
+#             if each.location == "None":
+#                 counter += 1
+
+#             if parameter == "all":
+#                 loc_lat_lon.add((each.location, each.lat, each.lon))
+
+#             elif each.parameter == parameter:
+#                 loc_lat_lon.add((each.location, each.lat, each.lon))
+
+#         # print(f"The number of unused datapoints are {counter}")
+#         # print(f"The total number of datapoints are {len(data)}")
+#         data_dist.append((counter, len(data)))
+#         lll_list.append(loc_lat_lon)
+
+#     return lll_list, data_dist, daily_list
 
 # def w_h5py(data_path, write_path, year: int, month=1):
 
