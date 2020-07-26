@@ -3,13 +3,74 @@ import gzip
 import json
 import os
 from datetime import datetime, timedelta
-
+import operator
 import h5py
 import numpy as np
 from tqdm import tqdm
 
 from DAAQS.utils.constants import MAX_ATTR_DICT, MIN_ATTR_DICT
 
+
+class OpenAQData(object):
+    def __init__(self, day, span):    
+        self.day = day
+        self.dt = datetime.strptime(self.day, "%Y-%m-%d")
+        self.span = span
+
+        if self.span == 0:
+            self.dt_list = [self.dt]
+        elif span > 0 :
+            self.dt_list  = [self.dt + timedelta(days = delta) for delta in range(-self.span,self.span+1)]
+        else : 
+            assert span >= 0 ,"Span is not non-negative integer"
+        self.data = self._read_openaq()
+    
+    def _read_openaq_day(self, day):
+        str_day = datetime.strftime(day, "%Y-%m-%d")
+        path = "data/raw/openaq/" + str_day + "/" 
+        file_list = [x for x in os.listdir(path) if x.split(".")[-1] == "gz"]
+        data = []
+        for each in file_list:
+            fpath = path + each
+            data.extend(self._read_gzip_file(fpath))
+        # print(f"The time taken to read one day is {time.time()-strt_time}")
+        return data
+
+    def _read_openaq(self):
+        list_data = []
+        for each_day in self.dt_list:
+            list_data.extend(self._read_openaq_day(each_day))
+
+        return list_data
+
+    def _read_gzip_file(self, path):
+        
+        with gzip.GzipFile(path, "r") as jsonzip:
+            data = []
+
+            for each_json in jsonzip:
+                single_dict = json.loads(each_json)
+
+                try:
+                    oaq = OAQ(single_dict)
+                except KeyError:
+                    oaq = OAQ(MAX_ATTR_DICT)
+                finally:
+                    data.append(oaq)
+        return data
+
+    def _sort_location(self):
+        self.data.sort(key=operator.attrgetter("location"))
+
+    def sort_dict(self):
+        _data_dict = dict()
+        self._sort_location()
+        for each in self.data:
+            if each.location in _data_dict:
+                _data_dict[each.location].append(each)
+            else:
+                _data_dict[each.location] = [each]
+        self.data_dict = _data_dict
 
 def _generate_daily_list(year, **kwargs):
 
@@ -112,7 +173,7 @@ def w_ll(year, parameter, month=1):
             csv_out.writerow(dist[i])
 
 
-class OpenaqDataMax(object):
+class OAQ(object):
     """
     The class stores the raw json value of openAQ data
     """
@@ -130,7 +191,7 @@ class OpenaqDataMax(object):
         "j_hour"
     )
 
-    def __init__(self, json_dict, MIN_ATTR_DICT):
+    def __init__(self, json_dict):
         """
         Standardised storage for data.
         Time is always stored  in 'UTC'
@@ -151,52 +212,13 @@ class OpenaqDataMax(object):
         self.avg_time_unit = json_dict["averagingPeriod"]["unit"]
         self.lat = json_dict["coordinates"]["latitude"]
         self.lon = json_dict["coordinates"]["longitude"]
-        self.j_hour = _julian_hour()
-
-    def _julian_hour(self):
-        strt_date = datetime(1900,1,1)
-        julian_hour = (self.time - strt_date)
-        return julian_hour
-
-class OpenaqDataMin(object):
-    """
-    The class stores the raw json value of openAQ data
-    """
-
-    __slots__ = (
-        "location",
-        "time",
-        "parameter",
-        "value",
-        "lat",
-        "lon",
-        "j_hour"
-    )
-
-    def __init__(self, json_dict):
-        """
-        Standardised storage for data.
-        Time is always stored  in 'UTC'
-        Standard units are as follows:
-
-        PM10 = ug/m3
-        Ozone =
-        SO2 =
-        averaging time is in hoursq
-        """
-        self.location = json_dict["location"]
-        time = json_dict["date"]["utc"]
-        self.time = datetime.strptime(time, "%Y-%m-%dT%H:%M:%S.%fZ")
-        self.parameter = json_dict["parameter"]
-        self.value = json_dict["value"]
-        self.lat = json_dict["coordinates"]["latitude"]
-        self.lon = json_dict["coordinates"]["longitude"]
         self.j_hour = self._julian_hour()
-        
+
     def _julian_hour(self):
         strt_date = datetime(1900,1,1)
         julian_hour = (self.time - strt_date)
         return julian_hour
+
 
 
 def _make_dir(path):
@@ -205,57 +227,49 @@ def _make_dir(path):
         os.mkdir(path)
 
 
-class OpenAQData(object):
-    def __init__(self, day, span):    
-        self.day = day
-        self.dt = datetime.strptime(self.day, "%Y-%m-%d")
-        self.span = span
-
-        if self.span == 0:
-            self.dt_list = [self.dt]
-        elif span > 0 :
-            self.dt_list  = [self.dt + timedelta(days = delta) for delta in range(-self.span,self.span+1)]
-        else : 
-            assert span >= 0 ,"Span is not non-negative integer"
-        self.data = self._read_openaq()
-    def _read_openaq_day(self, day):
-        str_day = datetime.strftime(day, "%Y-%m-%d")
-        path = "data/raw/openaq/" + str_day + "/" 
-        file_list = [x for x in os.listdir(path) if x.split(".")[-1] == "gz"]
-        data = []
-        for each in file_list:
-            fpath = path + each
-            data.extend(self._read_gzip_file(fpath))
-        # print(f"The time taken to read one day is {time.time()-strt_time}")
-        return data
-
-    def _read_openaq(self):
-        list_data = []
-        for each_day in self.dt_list:
-            list_data.append(self._read_openaq_day(each_day))
-
-        return list_data
-
-    def _read_gzip_file(self, path):
-        
-        with gzip.GzipFile(path, "r") as jsonzip:
-            data = []
-
-            for each_json in jsonzip:
-                single_dict = json.loads(each_json)
-
-                try:
-                    oaq = OpenaqDataMin(single_dict)
-                except KeyError:
-                    oaq = OpenaqDataMin(MIN_ATTR_DICT)
-                finally:
-                    data.append(oaq)
-        return data
-
 
 
 ###############
 
+# class OpenaqDataMin(object):
+#     """
+#     The class stores the raw json value of openAQ data
+#     """
+
+#     __slots__ = (
+#         "location",
+#         "time",
+#         "parameter",
+#         "value",
+#         "lat",
+#         "lon",
+#         "j_hour"
+#     )
+
+#     def __init__(self, json_dict):
+#         """
+#         Standardised storage for data.
+#         Time is always stored  in 'UTC'
+#         Standard units are as follows:
+
+#         PM10 = ug/m3
+#         Ozone =
+#         SO2 =
+#         averaging time is in hoursq
+#         """
+#         self.location = json_dict["location"]
+#         time = json_dict["date"]["utc"]
+#         self.time = datetime.strptime(time, "%Y-%m-%dT%H:%M:%S.%fZ")
+#         self.parameter = json_dict["parameter"]
+#         self.value = json_dict["value"]
+#         self.lat = json_dict["coordinates"]["latitude"]
+#         self.lon = json_dict["coordinates"]["longitude"]
+#         self.j_hour = self._julian_hour()
+        
+#     def _julian_hour(self):
+#         strt_date = datetime(1900,1,1)
+#         julian_hour = (self.time - strt_date)
+#         return julian_hour
 
 
 # def r_lll(r_path, year, parameter, month):

@@ -26,7 +26,7 @@ def max_openaq_grid(parameter,day):
 def max_cams_grid(parameter, day):
     cams_data = CAMSData(parameter = parameter, day=day, span=0)
     data = cams_data.data[0]
-    print(data[oaq_cams_dict[parameter]])
+
     factor = 1
     if parameter == "pm25":
         factor = 10e9    

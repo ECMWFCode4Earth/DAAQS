@@ -8,5 +8,5 @@ day_list = ["2019-01-01", "2019-02-01", "2019-03-01",
 
 for day in tqdm(day_list):
     CAMSMaxPlot(parameter, day = day)
-    #OpenAQMaxPlot(parameter, day = day)
+    OpenAQMaxPlot(parameter, day = day)
     #MaxDiffPlot(parameter, day = day)
