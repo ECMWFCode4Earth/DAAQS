@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import numpy as np
 
 def generate_daily_list(year, **kwargs):
 
@@ -23,3 +24,10 @@ def generate_daily_list(year, **kwargs):
         daily_list.append(dt_str + "/")
 
     return daily_list
+
+def gen_radial_coordinates(time):
+    theta = 2*np.pi*time/24
+    x1 = np.cos(theta)
+    x2 = np.sin(theta)
+
+    return x1,x2
