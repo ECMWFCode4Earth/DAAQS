@@ -16,7 +16,7 @@ def max_openaq_grid(parameter,day):
     for each_data in day_data:
         if each_data.lat!= -9999 and each_data.lon!= -9999:
 
-            index_lat, index_lon= int((90 - each_data.lat)/0.75),   int(each_data.lon/0.75)
+            index_lat, index_lon= int((90 - each_data.lat)/dx),   int(each_data.lon/dy)
             if np.isnan(_z[index_lat, index_lon]):
                 _z[index_lat, index_lon] = each_data.value
             else: 

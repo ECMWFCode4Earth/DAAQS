@@ -23,8 +23,12 @@ class OpenAQData(object):
             self.dt_list  = [self.dt + timedelta(days = delta) for delta in range(-self.span,self.span+1)]
         else : 
             assert span >= 0 ,"Span is not non-negative integer"
-        self.data = self._read_openaq()
-    
+        list_data = self._read_openaq()
+        self.data = []
+        for each in list_data:
+            self.data.extend(each)
+
+
     def _read_openaq_day(self, day):
         str_day = datetime.strftime(day, "%Y-%m-%d")
         path = "data/raw/openaq/" + str_day + "/" 
@@ -39,7 +43,7 @@ class OpenAQData(object):
     def _read_openaq(self):
         list_data = []
         for each_day in self.dt_list:
-            list_data.extend(self._read_openaq_day(each_day))
+            list_data.append(self._read_openaq_day(each_day))
 
         return list_data
 

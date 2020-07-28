@@ -6,9 +6,9 @@ parameter = "pm25"
 #        "2019-07-01", "2019-08-01", "2019-09-01", 
 #        "2019-10-01", "2019-11-01", "2019-12-01"]
 
-day_list = ["2019-04-25"]
+day_list = ["2019-07-29"]
 
 for day in tqdm(day_list):
-    CAMSMaxPlot(parameter, day = day)
-    #OpenAQMaxPlot(parameter, day = day)
+    #CAMSMaxPlot(parameter, day = day)
+    OpenAQMaxPlot(parameter, day = day)
     #MaxDiffPlot(parameter, day = day)

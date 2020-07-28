@@ -22,11 +22,11 @@ class ParameterMaps(object):
         self.str_month = str(self.month).zfill(2)
         self.degree = degree
         self.lat_lon = self._read_ll_month()
-        _lat, _lon, _z = self._generate_grid(degree=degree)
+        _z, _lat, _lon = self._generate_grid(degree=degree)
         self._lat = _lat
         self._lon = _lon
         self._z = _z
-
+        self.vmax = 6
         self._generate_map()
 
     def _generate_map(self):
@@ -34,10 +34,10 @@ class ParameterMaps(object):
         ax = fig.add_subplot(projection=ccrs.PlateCarree())
         ax.coastlines()
         cmap = cm.get_cmap("Spectral", 5)
-        color_bar = ax.pcolormesh(self._lon, self._lat, self._z, cmap=cmap)
+        color_bar = ax.pcolormesh(self._lon, self._lat, self._z, cmap=cmap, vmax = self.vmax)
 
         ax.set_title(
-            f"Stations in each grid for {self.parameter} | year {self.year} | month {self.str_month}"
+            f"Stations per grid for {self.parameter} in {self.str_month}, {self.year}"
         )
         plt.colorbar(color_bar, fraction=0.023, pad=0.04)
         fname = (
@@ -49,6 +49,7 @@ class ParameterMaps(object):
             + self.str_month
             + ".png"
         )
+        fig.tight_layout()
         plt.savefig("plots/coverage/" + fname)
         plt.close()
 
@@ -62,15 +63,15 @@ class ParameterMaps(object):
         _z = np.NaN * np.ones_like(_lat)[:-1, :-1]
 
         for each in lat_lon:
-            index_lon = int((each[1] + 180) / dx)
-            index_lat = int((each[0] - 90) / dy)
+            index_lon = int((each[1]+180) / dx)
+            index_lat = int((90-each[0]) / dy)
     
             if np.isnan(_z[index_lat, index_lon]):
                 _z[index_lat, index_lon] = 1
             else:
                 
                 _z[index_lat, index_lon] += 1
-        return _lat, _lon, _z
+        return _z, _lat, _lon
 
     def _read_ll_day(self, day ):
         f_path = "data/processed/ll_openaq/" + day + "/ll_"+day+"_"+self.parameter+".csv"
@@ -104,18 +105,22 @@ class CAMSMaxPlot(object):
         self.z = z
         self.lat = lat
         self.lon = lon 
-        self.vmax = 15000
+        self.vmax = 3000
+        self.unit = "UNK"
+        if self.parameter == "pm25":
+            self.unit = "$\mu$g/$m^3$"
         self._generate_map()
-        
+         
+
     def _generate_map(self):
         fig = plt.figure()
         ax = fig.add_subplot(projection=ccrs.PlateCarree())
         ax.coastlines()
         cmap = cm.get_cmap("OrRd")
         color_bar = ax.pcolormesh(self.lon, self.lat, self.z, cmap=cmap, vmin=0, vmax = self.vmax)
-
+        
         ax.set_title(
-            f"CAMS plot for max {self.parameter} on {self.day}"
+            f"Maximum {self.parameter} on {self.day} in {self.unit}"
         )
         plt.colorbar(color_bar, fraction=0.023, pad=0.04)
         fname = (
@@ -125,6 +130,7 @@ class CAMSMaxPlot(object):
             + str(self.day)
             + ".png"
         )
+        fig.tight_layout()
         plt.savefig("plots/cams/" + fname)
         plt.close()
 
@@ -136,7 +142,10 @@ class OpenAQMaxPlot(object):
         self.z = z
         self.lat = lat
         self.lon = lon 
-        self.vmax = 15000
+        self.vmax = 3000
+        self.unit = "UNK"
+        if self.parameter == "pm25":
+            self.unit = "$\mu$g/$m^3$"
         self._generate_map()
         
 
@@ -148,7 +157,7 @@ class OpenAQMaxPlot(object):
         color_bar = ax.pcolormesh(self.lon, self.lat, self.z, cmap=cmap, vmin = 0, vmax = self.vmax)
 
         ax.set_title(
-            f"OpenAQ plot for max {self.parameter} on {self.day}"
+            f"Maximum {self.parameter} on {self.day} in {self.unit}"
         )
         plt.colorbar(color_bar, fraction=0.023, pad=0.04 )
         fname = (
@@ -158,6 +167,7 @@ class OpenAQMaxPlot(object):
             + str(self.day)
             + ".png"
         )
+        fig.tight_layout()
         plt.savefig("plots/openaq/" + fname)
         plt.close()
 
