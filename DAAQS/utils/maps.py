@@ -2,6 +2,8 @@ import cartopy.crs as ccrs
 import matplotlib.pylab as plt
 import numpy as np
 from matplotlib import cm
+import cartopy.io.img_tiles as cimgt
+from shapely.geometry.polygon import LinearRing
 from DAAQS.utils.misc import generate_daily_list
 from DAAQS.utils.io_cams import CAMSData
 from DAAQS.utils.io_openaq import OpenAQData
@@ -202,3 +204,35 @@ class MaxDiffPlot(object):
         )
         plt.savefig("plots/difference/" + fname)
         plt.close()
+
+
+def outlier_station_plot(center, lat_lon_class, factor = 8, fpath = "plots/outlier_plot.png"):
+
+    delta = 0.75
+    square_lons = [77.20-delta,77.20-delta,77.20+delta,77.20+delta]
+    square_lats = [28.6-delta,28.6+delta,28.6+delta,28.6-delta]
+
+    stamen_terrain = cimgt.Stamen('terrain-background')
+
+    fig = plt.figure(figsize=(8,8))
+    ax = fig.add_subplot(projection=stamen_terrain.crs)
+    ax.set_extent([77.20+factor*delta, 77.20-factor*delta,28.6-factor*delta,28.6+factor*delta  ] , ccrs.PlateCarree())
+    ax.add_image(stamen_terrain, 8)
+    ax.plot(center[1], center[0], marker='o', color='k', markersize=6,
+                alpha=0.7, transform=ccrs.Geodetic())
+    ring = LinearRing(list(zip(square_lons, square_lats)))
+    ax.add_geometries([ring], ccrs.PlateCarree(), facecolor='none', edgecolor='black')
+
+    for i in range(len(lat_lon_class)):
+        if lat_lon_class[i][2] == 1 :
+            color = "r"
+        elif lat_lon_class[i][2] == 0:
+            color = "g"
+        elif lat_lon_class[i][2] == -1:
+            color = "grey"
+
+        ax.plot(lat_lon_class[i][1], lat_lon_class[i][0], marker='o', color=color, markersize=4,
+                alpha=0.7, transform=ccrs.Geodetic())
+
+    ax.gridlines(crs=ccrs.PlateCarree(), draw_labels = True)
+    plt.savefig(fpath)

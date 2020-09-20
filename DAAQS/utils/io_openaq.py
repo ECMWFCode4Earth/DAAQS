@@ -12,21 +12,27 @@ from DAAQS.utils.constants import MAX_ATTR_DICT, MIN_ATTR_DICT
 
 
 class OpenAQData(object):
-    def __init__(self, day, span):    
+    def __init__(self, day, span, parameter):    
         self.day = day
         self.dt = datetime.strptime(self.day, "%Y-%m-%d")
         self.span = span
-
+        self.parameter = parameter
+        self.tot_data_points = 0
+        self.good_data_points = 0
+        self.grid_size = 0.75
+        
         if self.span == 0:
             self.dt_list = [self.dt]
         elif span > 0 :
             self.dt_list  = [self.dt + timedelta(days = delta) for delta in range(-self.span,self.span+1)]
         else : 
             assert span >= 0 ,"Span is not non-negative integer"
+        
         list_data = self._read_openaq()
-        self.data = []
+        self.ungridded_data = []
         for each in list_data:
-            self.data.extend(each)
+            self.ungridded_data.extend(each)
+        self.data = self._gridded_data()
 
 
     def _read_openaq_day(self, day):
@@ -60,21 +66,53 @@ class OpenAQData(object):
                 except KeyError:
                     oaq = OAQ(MAX_ATTR_DICT)
                 finally:
-                    data.append(oaq)
+                    if oaq.parameter == self.parameter:
+                        self.tot_data_points+=1
+                        if oaq.value!=-9999:
+                            self.good_data_points+=1
+                            data.append(oaq)
+        return data
+
+    def _gridded_data(self):
+
+        start_date = self.dt - timedelta(days=self.span)
+
+        time_dim = (2*self.span+1)*8
+        data = [[[[] for k in range(480)] for j in range(241)] for i in range(time_dim)]
+        for obs in self.ungridded_data:
+            hours_from_start  = (obs.time - start_date).seconds/(60*60) 
+            ## Convert longitude 
+            if obs.lon<0:
+                lon  = 360+obs.lon
+            else:
+                lon = obs.lon
+
+            index_time = int(hours_from_start/3)
+            index_lat = int((90+self.grid_size/2.0-obs.lat)/self.grid_size)
+            
+            if lon > 360-self.grid_size/2:
+                index_lon = 0
+            else:
+                index_lon = int((lon+self.grid_size/2.0)/self.grid_size)
+            
+            if index_time >=0:    
+                data[index_time][index_lat][index_lon].append(obs)
+        
         return data
 
     def _sort_location(self):
-        self.data.sort(key=operator.attrgetter("location"))
+        self.ungridded_data.sort(key=operator.attrgetter("location"))
 
     def sort_dict(self):
         _data_dict = dict()
         self._sort_location()
-        for each in self.data:
+        for each in self.ungridded_data:
             if each.location in _data_dict:
                 _data_dict[each.location].append(each)
             else:
                 _data_dict[each.location] = [each]
         self.data_dict = _data_dict
+
 
 def _generate_daily_list(year, **kwargs):
 

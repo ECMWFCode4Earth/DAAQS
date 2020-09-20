@@ -31,3 +31,9 @@ def gen_radial_coordinates(time):
     x2 = np.sin(theta)
 
     return x1,x2
+
+def index_to_center(index_lat, index_lon):
+    grid_size = 0.75
+    lat = 90-grid_size*index_lat
+    lon =  grid_size*index_lon
+    return lat, lon

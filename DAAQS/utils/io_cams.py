@@ -1,11 +1,11 @@
 from netCDF4 import Dataset
-from DAAQS.utils.constants import cams_fname_dict
+from DAAQS.utils.constants import cams_fname_dict, oaq_cams_dict
 from datetime import datetime, timedelta
-
+import numpy as np
 
 class CAMSData(object):
     
-    def __init__(self, parameter, day, span):
+    def __init__(self, day, span, parameter):
         self.day = day
         self.dt = datetime.strptime(self.day, "%Y-%m-%d")
         self.span = span
@@ -28,6 +28,8 @@ class CAMSData(object):
             fname = cams_fname_dict[self.parameter] + "_" + str_day + ".nc"
             fdir = "data/raw/cams/"
             fpath = fdir + fname
-            list_data.append(Dataset(fpath, "r"))
-        
-        return list_data
+            #print(Dataset(fpath, "r"))
+            daily_data = Dataset(fpath, "r")[oaq_cams_dict[self.parameter]][:,:,:]
+            list_data.append(daily_data)
+
+        return np.vstack(list_data)
