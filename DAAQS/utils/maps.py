@@ -4,11 +4,14 @@ import numpy as np
 from matplotlib import cm
 import cartopy.io.img_tiles as cimgt
 from shapely.geometry.polygon import LinearRing
-from DAAQS.utils.misc import generate_daily_list
+
+from DAAQS.utils.misc import generate_daily_list, lon_transform_0_base, lon_transform_minus180_base
 from DAAQS.utils.io_cams import CAMSData
 from DAAQS.utils.io_openaq import OpenAQData
 from DAAQS.utils.constants import oaq_cams_dict
 from DAAQS.utils.analysis import max_openaq_grid, max_cams_grid
+
+import time
 
 class ParameterMaps(object):
     def __init__(
@@ -236,3 +239,51 @@ def outlier_station_plot(center, lat_lon_class, factor = 8, fpath = "plots/outli
 
     ax.gridlines(crs=ccrs.PlateCarree(), draw_labels = True)
     plt.savefig(fpath)
+
+class OutlierMaps(object):
+    def __init__(self,outlier_station, other_station, **kwargs):
+        self.list_outlier_station = outlier_station
+        self.list_other_station = other_station
+
+        # We are using a 4 color color pallete
+
+        self.c1 = "#ff6d69" # light_red
+        self.c2 = "#fecc50" # light_yellow
+        self.c3 = "#0be7fb" # light_blue
+        self.c4 = "#010b8b" # dark blue
+        self.c5 = "#1e0521" # blackish        
+
+
+    def generate_step_plot(self, fname, step = 1):
+
+        outlier_station = self.list_outlier_station[step-1]
+        other_station = self.list_other_station[step-1]
+    
+        fig = plt.figure(figsize=(12,8), dpi = 240)
+        
+        ax = fig.add_subplot(projection=ccrs.PlateCarree())
+        
+        ax.coastlines()
+
+        for other in other_station:
+            lat, lon = other[1]
+   
+            if other[0].split("_")[0]== "grid":
+                pass
+
+            else:
+                ax.plot(lon, lat, marker= "o",  color = self.c3, markersize = 1)
+
+        for outlier in outlier_station:
+            lat, lon = outlier[1]
+  
+            if outlier[0].split("_")[0]== "grid":
+                lon = lon_transform_minus180_base(lon)
+                ax.plot(lon, lat, marker = "o",  color = self.c1, markersize = 2)
+             
+            else:
+                ax.plot(lon, lat, marker = "o",  color = self.c4, markersize = 1)
+        
+        ax.stock_img()
+        ax.gridlines(crs=ccrs.PlateCarree(), draw_labels = True)
+        plt.savefig(fname)

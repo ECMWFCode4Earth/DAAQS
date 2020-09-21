@@ -1,6 +1,6 @@
 import numpy as np
 
-from DAAQS.utils.misc import 
+from DAAQS.utils.misc import index_to_center
 
 def temporal_average(c_data, o_data, index_lat, index_lon):
 
@@ -20,12 +20,20 @@ def temporal_average(c_data, o_data, index_lat, index_lon):
     
     c_dict = dict()
 
-    for col in range(cams_avg.shape[1]):    
-        if "loc_"+str(col) in c_dict:
+    lat_0, lon_0 = index_to_center(index_lat-1,index_lon-1)
+    lat_1, lon_1 = index_to_center(index_lat,index_lon) 
+    lat_2, lon_2 = index_to_center(index_lat+1,index_lon+1) 
+
+    coordinate_list = [(lat_0, lon_0), (lat_0, lon_1), (lat_0, lon_2), 
+                       (lat_1, lon_0), (lat_1, lon_1), (lat_1, lon_2), 
+                       (lat_2, lon_0), (lat_2, lon_1), (lat_2, lon_2),]
+
+    for grid in range(cams_avg.shape[1]):    
+        if "grid_"+str(grid) in c_dict:
             pass
         else: 
-            c_dict["loc_"+str(col)] = list(cams_avg[:,col]).append()
-
+            c_dict["grid_"+str(grid)] = list(cams_avg[:,grid])
+            c_dict["grid_"+str(grid)].append({"coordinates":coordinate_list[grid]})
     # cams_avg is 8x9 values which is at each 9 location we have 1x8 different values 
 
     ## OPENAQ Data
@@ -39,7 +47,7 @@ def temporal_average(c_data, o_data, index_lat, index_lon):
                     if obs.location in o_dict:
                         o_dict[obs.location][time_index].append(obs.value)
                     else:
-                        o_dict[obs.location] = [[],[],[],[],[],[],[],[], {"cordinates":(obs.lat, obs.lon)}]
+                        o_dict[obs.location] = [[],[],[],[],[],[],[],[], {"coordinates":(obs.lat, obs.lon)}]
 
     for each in o_dict:
         for i in range(8):

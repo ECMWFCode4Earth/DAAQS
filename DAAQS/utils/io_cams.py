@@ -28,8 +28,14 @@ class CAMSData(object):
             fname = cams_fname_dict[self.parameter] + "_" + str_day + ".nc"
             fdir = "data/raw/cams/"
             fpath = fdir + fname
-            #print(Dataset(fpath, "r"))
-            daily_data = Dataset(fpath, "r")[oaq_cams_dict[self.parameter]][:,:,:]
+            #print(Dataset(fpath, "r")
+
+            # We convert while reading the data only
+            conversion_factor = 1
+            if self.parameter == "pm25":
+                # pm25 in ug/m3
+                conversion_factor = 10e6
+            daily_data = Dataset(fpath, "r")[oaq_cams_dict[self.parameter]][:,:,:]*conversion_factor
             list_data.append(daily_data)
 
         return np.vstack(list_data)
