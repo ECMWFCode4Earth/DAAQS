@@ -14,3 +14,4 @@ Detect Anomaly in Air Quality Station (DAAQS)
     - set the `openaq_folder` path
     A typical openaq_folder will contain files like "2019-01-01/1514765764.ndjson.gz"
 - It is a good practice to create a plots folder in the main repository and save the plots there. plots is already added in gitignore.
+- Run the script run.py to test. It took 1200 seconds on our machine.
