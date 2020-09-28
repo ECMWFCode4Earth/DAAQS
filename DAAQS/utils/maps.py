@@ -278,7 +278,9 @@ class OutlierMaps(object):
   
             if outlier[0].split("_")[0]== "grid":
                 lon = lon_transform_minus180_base(lon)
-                ax.plot(lon, lat, marker = "o",  color = self.c1, markersize = 1)
+                
+                #Comment cams as an outlier
+                # ax.plot(lon, lat, marker = "o",  color = self.c1, markersize = 1)
              
             else:
                 ax.plot(lon, lat, marker = "o",  color = self.c4, markersize = 1)
@@ -327,7 +329,6 @@ class OutlierMaps(object):
                     lat_list.append(lat)
                     z_list.append(z)
 
-        print("We are plotting here")
         ax.scatter(lon_list, lat_list, c = z_list, s = 1,  cmap = "OrRd")
         
         self.combined_dict = combined_dict
