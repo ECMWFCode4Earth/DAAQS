@@ -8,13 +8,16 @@ from pyod.models.lof import LOF
 
 
 class Model(object):
-    def __init__(self, c_dict, o_dict):
+    def __init__(self, c_dict, o_dict, cams = True):
         self.c_dict = c_dict
         self.o_dict = o_dict
-        
+        self.cams = cams
         x = []
-        for _, val in self.c_dict.items():
-            x.append(val[:8])
+        if cams == True:
+            for _, val in self.c_dict.items():
+                x.append(val[:8])
+        else:
+            pass
         for _, val in self.o_dict.items():
             x.append(val[:8])
         
@@ -25,15 +28,15 @@ class Model(object):
 
     def pred_KNN(self, k =5):
         ## hyperparameters for KNN is tuned here
-        if self.bool_o_dict == True:
-            self.clf = KNN(n_neighbors=k)
-            self.clf.fit(self.X)
-            pred = self.clf.labels_
-            return pred 
+        # if self.bool_o_dict == True:    
+        self.clf = KNN(n_neighbors=k)
+        self.clf.fit(self.X)
+        pred = self.clf.labels_
+        return pred 
 
-        else:
-            pred = []
-            return pred   
+        #else:
+            # pred = []
+            # return pred   
     
     def pred_COPOD(self):
         ## hyperparameters for KNN is tuned here

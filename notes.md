@@ -7,3 +7,19 @@
 - parameter is the species for example pm25
 - .data attribute of CAMS data gives a 3D array while for OpenAQ data it gives 4D list. Array can be indexed as X[time, lat, lon], 4 D list can be indexed as X[time][lat][lon]. For Open AQ the X[time][lat][lon] this gives a list of all data points present in the particular cams grid in particular time interval
 - Fuurther Model class is used for prediction 
+- For KNN the time taken to run this model is roughly 600 (591.299) seconds for 1 month of 1 species 
+- Thus for 1 year for each species it should roughly take 2 hours. Which is manageable under current approach
+
+### Some infomration about the Unit
+
+##### Cpnversion Factor
+
+| Species | CAMS | OpenAQ |
+
+|PM2.5| kg/m3 | ug/m3
+|NO2| kg/kg | ppm & ug/m3
+|SO2| kg/kg | ppm & ug/m3
+|O3| kg/kg | ppm & ug/m3
+
+PM2.5 in CAMS is in kg/m3 while in openAQ is ug/m3 - 1e9
+

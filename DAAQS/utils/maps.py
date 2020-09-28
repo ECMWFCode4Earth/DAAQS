@@ -263,7 +263,6 @@ class OutlierMaps(object):
         
         ax = fig.add_subplot(projection=ccrs.PlateCarree())
         
-        ax.coastlines()
 
         for other in other_station:
             lat, lon = other[1]
@@ -279,11 +278,61 @@ class OutlierMaps(object):
   
             if outlier[0].split("_")[0]== "grid":
                 lon = lon_transform_minus180_base(lon)
-                ax.plot(lon, lat, marker = "o",  color = self.c1, markersize = 2)
+                ax.plot(lon, lat, marker = "o",  color = self.c1, markersize = 1)
              
             else:
                 ax.plot(lon, lat, marker = "o",  color = self.c4, markersize = 1)
+        ax.coastlines()
         
         ax.stock_img()
         ax.gridlines(crs=ccrs.PlateCarree(), draw_labels = True)
         plt.savefig(fname)
+
+    def generate_overall_plot(self, fname):
+
+        combined_dict = dict()
+        for outlier_station in self.list_outlier_station:
+            for station in outlier_station:
+                if station[1] in combined_dict:
+                    combined_dict[station[1]][1] +=1
+                else:
+                    combined_dict[station[1]] = [station[0], 1, 0]
+
+        for other_station in self.list_other_station:
+            for station in other_station:
+                if station[1] in combined_dict:
+                    combined_dict[station[1]][2] +=1
+                else:
+                    combined_dict[station[1]] = [station[0], 0, 1]
+
+        fig = plt.figure(figsize=(12,8), dpi = 240)
+        ax = fig.add_subplot(projection=ccrs.PlateCarree())
+
+        lon_list = []
+        lat_list = []
+        z_list = []
+
+        for key, value in combined_dict.items():
+            lat = key[0]
+            lon = key[1]
+
+            z = value[1]/(value[1]+value[2])
+
+            combined_dict[key].append(z)
+
+            if z >0:
+                if value[0].split("_")[0] != "grid":
+                    lon = lon_transform_minus180_base(lon)
+                    lon_list.append(lon)
+                    lat_list.append(lat)
+                    z_list.append(z)
+
+        print("We are plotting here")
+        ax.scatter(lon_list, lat_list, c = z_list, s = 1,  cmap = "OrRd")
+        
+        self.combined_dict = combined_dict
+        ax.coastlines()
+        ax.stock_img()
+        ax.gridlines(crs=ccrs.PlateCarree(), draw_labels = True)
+        plt.savefig(fname)
+       
