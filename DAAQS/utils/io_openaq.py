@@ -9,7 +9,7 @@ import numpy as np
 from tqdm import tqdm
 
 from DAAQS.utils.constants import MAX_ATTR_DICT, oaq_unit_dict
-
+from DAAQS.utils.cfg import openaq_folder
 
 class OpenAQData(object):
     def __init__(self, day, span, parameter):    
@@ -37,7 +37,7 @@ class OpenAQData(object):
 
     def _read_openaq_day(self, day):
         str_day = datetime.strftime(day, "%Y-%m-%d")
-        path = "data/raw/openaq/" + str_day + "/" 
+        path = openaq_folder + str_day + "/" 
         file_list = [x for x in os.listdir(path) if x.split(".")[-1] == "gz"]
         data = []
         for each in file_list:
