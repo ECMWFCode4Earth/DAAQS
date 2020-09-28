@@ -1,4 +1,5 @@
 from netCDF4 import Dataset
+from DAAQS.utils.cfg import cams_folder
 from DAAQS.utils.constants import cams_fname_dict, oaq_cams_dict
 from datetime import datetime, timedelta
 import numpy as np
@@ -26,7 +27,7 @@ class CAMSData(object):
         for each_day in self.dt_list:
             str_day = datetime.strftime(each_day, "%Y-%m-%d")
             fname = cams_fname_dict[self.parameter] + "_" + str_day + ".nc"
-            fdir = "data/raw/cams/"
+            fdir = cams_folder
             fpath = fdir + fname
 
             # We convert while reading the data only
@@ -40,8 +41,6 @@ class CAMSData(object):
                 conversion_factor == 1
             elif self.parameter == "o3":
                 conversion_factor = 1
-
-            
 
             daily_data = Dataset(fpath, "r")[oaq_cams_dict[self.parameter]][:,:,:]
             daily_data[daily_data<1e-9] = 0
