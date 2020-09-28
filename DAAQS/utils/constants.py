@@ -30,3 +30,10 @@ oaq_cams_dict = {
     "so2" : "so2",
     "o3" : "go3"
 }
+
+oaq_unit_dict = {
+    "pm25" : "µg/m³",
+    "no2" : "ppm",
+    "so2" : "ppm",
+    "o3" : "ppm"
+}

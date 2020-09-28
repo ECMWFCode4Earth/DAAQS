@@ -8,7 +8,7 @@ day = "2019-01-04"
 span = 3
 parameter =  "pm25"
 
-day_list= generate_day_list(day, step_size=2*span+1, n_steps=4)
+day_list= generate_day_list(day, step_size=2*span+1, n_steps=8)
 
 t_outlier_KNN = []
 t_other_KNN = []
@@ -40,10 +40,6 @@ for day in day_list:
 
 outlier_maps = OutlierMaps(t_outlier_KNN,t_other_KNN)
 
-outlier_maps.generate_step_plot("outlier_knn_5_1.png", step=1)
-outlier_maps.generate_step_plot("outlier_knn_5_2.png", step=2)
-outlier_maps.generate_step_plot("outlier_knn_5_3.png", step=3)
-outlier_maps.generate_step_plot("outlier_knn_5_4.png", step=4)
-
+outlier_maps.generate_overall_plot("scratch.png")
 
 print(f"The total time taken by the script is {time.time()-strt_time:.3f}")

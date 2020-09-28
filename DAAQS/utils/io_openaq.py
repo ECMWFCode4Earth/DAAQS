@@ -8,7 +8,7 @@ import h5py
 import numpy as np
 from tqdm import tqdm
 
-from DAAQS.utils.constants import MAX_ATTR_DICT, MIN_ATTR_DICT
+from DAAQS.utils.constants import MAX_ATTR_DICT, oaq_unit_dict
 
 
 class OpenAQData(object):
@@ -71,6 +71,9 @@ class OpenAQData(object):
                         if oaq.value!=-9999:
                             self.good_data_points+=1
                             data.append(oaq)
+                            if oaq.unit != oaq_unit_dict[self.parameter]:
+                                print(f"Unit is not {oaq_unit_dict[self.parameter]} and the data needs to be converted here")
+
         return data
 
     def _gridded_data(self):
