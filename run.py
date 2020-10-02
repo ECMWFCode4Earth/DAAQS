@@ -5,10 +5,10 @@ import time
 
 strt_time  = time.time()
 day = "2019-01-04"
-span = 3
-parameter =  "so2"
-comp_with = "cams"
-n_steps = 1
+span = 0
+parameter =  "pm25"
+comp_with = "openaq"
+n_steps = 20
 
 day_list= generate_day_list(day, step_size=2*span+1, n_steps=n_steps)
 
@@ -42,7 +42,7 @@ for day in day_list:
 
 outlier_maps = StationsMap(t_A_KNN,t_B_KNN, t_C_KNN)
 
-#outlier_maps.generate_overall_plot("knn_5_50.png")
-outlier_maps.generate_step_plot("plots/knn_5_"+parameter+"_"+comp_with+".png")
+outlier_maps.generate_overall_plot("plots/knn_5_20.png", "outputs/knn_5_20.csv")
+
 
 print(f"The total time taken by the script is {time.time()-strt_time:.3f}")

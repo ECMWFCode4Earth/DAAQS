@@ -256,12 +256,13 @@ class StationsMap(object):
 
         self.s = 0.5
 
-    def generate_step_plot(self, fname, step = 1):
+    def generate_step_plot(self, map_name, file_name,  step = 1):
 
         A_station = self.list_A_station[step-1]
         B_station = self.list_B_station[step-1]
         C_station = self.list_C_station[step-1]
         
+
         fig = plt.figure(figsize=(12,8), dpi = 240)
         
         ax = fig.add_subplot(projection=ccrs.PlateCarree())
@@ -278,9 +279,9 @@ class StationsMap(object):
         
         ax.stock_img()
         ax.gridlines(crs=ccrs.PlateCarree(), draw_labels = True)
-        plt.savefig(fname)
+        plt.savefig(file_name)
 
-    def generate_overall_plot(self, fname):
+    def generate_overall_plot(self, map_name, file_name):
 
         combined_dict = dict()
         for A_station in self.list_A_station:
@@ -288,22 +289,25 @@ class StationsMap(object):
                 if A[1] in combined_dict:
                     combined_dict[A[1]][1]+=1
                 else:
-                    combined_dict[A[1]] = [A[0], 1, 0]
+                    combined_dict[A[1]] = [A[0], 1, 0, 0]
 
         for B_station in self.list_B_station:
             for B in B_station:
                 if B[1] in combined_dict:
                     combined_dict[B[1]][2]+=1
                 else:
-                    combined_dict[B[1]] = [B[0], 1, 0]
+                    combined_dict[B[1]] = [B[0], 0, 1, 0]
 
         for C_station in self.list_C_station:
             for C in C_station:
                 if C[1] in combined_dict:
-                    combined_dict[C[1]][1]+=1
+                    combined_dict[C[1]][3]+=1
                 else:
-                    combined_dict[C[1]] = [B[0], 1, 0]
-
+                    combined_dict[C[1]] = [C[0], 0, 0, 1]
+        
+        self.combined_dict = combined_dict
+        self._write_files(file_name, combined_dict)
+        
         fig = plt.figure(figsize=(12,8), dpi = 240)
         ax = fig.add_subplot(projection=ccrs.PlateCarree())
 
@@ -315,7 +319,7 @@ class StationsMap(object):
             lat = key[0]
             lon = key[1]
 
-            z = value[1]/(value[1]+value[2])
+            z = value[1]+value[3]/(value[1]+value[2]+value[3])
 
             combined_dict[key].append(z)
 
@@ -332,8 +336,14 @@ class StationsMap(object):
         ax.coastlines()
         ax.stock_img()
         ax.gridlines(crs=ccrs.PlateCarree(), draw_labels = True)
-        plt.savefig(fname)
+        plt.savefig(map_name)
     
+    def _write_files(self, file_name, loc_dict):
+        with open(file_name, "w") as f:
+            f.write("lat,lon,count_A,count_B,count_C,location\n")
+            for key,val in loc_dict.items():
+                f.write(str(key[0])+","+str(key[1])+","+str(val[1])+","+str(val[2])+","+str(val[3])+","+val[0]+"\n")
+
     def _generate_list_lat_lon(self, station, cams=False):
         list_lat = []
         list_lon = []
