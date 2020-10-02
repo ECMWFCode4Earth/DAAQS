@@ -240,10 +240,11 @@ def outlier_station_plot(center, lat_lon_class, factor = 8, fpath = "plots/outli
     ax.gridlines(crs=ccrs.PlateCarree(), draw_labels = True)
     plt.savefig(fpath)
 
-class OutlierMaps(object):
-    def __init__(self,outlier_station, other_station, **kwargs):
-        self.list_outlier_station = outlier_station
-        self.list_other_station = other_station
+class StationsMap(object):
+    def __init__(self,A_station, B_station, C_station):
+        self.list_A_station = A_station
+        self.list_B_station = B_station
+        self.list_C_station = C_station
 
         # We are using a 4 color color pallete
 
@@ -253,37 +254,26 @@ class OutlierMaps(object):
         self.c4 = "#010b8b" # dark blue
         self.c5 = "#1e0521" # blackish        
 
+        self.s = 0.5
 
     def generate_step_plot(self, fname, step = 1):
 
-        outlier_station = self.list_outlier_station[step-1]
-        other_station = self.list_other_station[step-1]
-    
+        A_station = self.list_A_station[step-1]
+        B_station = self.list_B_station[step-1]
+        C_station = self.list_C_station[step-1]
+        
         fig = plt.figure(figsize=(12,8), dpi = 240)
         
         ax = fig.add_subplot(projection=ccrs.PlateCarree())
         
+        A_lat, A_lon = self._generate_list_lat_lon(A_station)
+        B_lat, B_lon = self._generate_list_lat_lon(B_station)
+        C_lat, C_lon = self._generate_list_lat_lon(C_station)
 
-        for other in other_station:
-            lat, lon = other[1]
-   
-            if other[0].split("_")[0]== "grid":
-                pass
+        ax.scatter(C_lon, C_lat, color = self.c5, s = self.s)
+        ax.scatter(B_lon, B_lat, color = self.c4, s = self.s)
+        ax.scatter(A_lon, A_lat, color = self.c1, s = self.s)
 
-            else:
-                ax.plot(lon, lat, marker= "o",  color = self.c3, markersize = 1)
-
-        for outlier in outlier_station:
-            lat, lon = outlier[1]
-  
-            if outlier[0].split("_")[0]== "grid":
-                lon = lon_transform_minus180_base(lon)
-                
-                #Comment cams as an outlier
-                # ax.plot(lon, lat, marker = "o",  color = self.c1, markersize = 1)
-             
-            else:
-                ax.plot(lon, lat, marker = "o",  color = self.c4, markersize = 1)
         ax.coastlines()
         
         ax.stock_img()
@@ -293,19 +283,26 @@ class OutlierMaps(object):
     def generate_overall_plot(self, fname):
 
         combined_dict = dict()
-        for outlier_station in self.list_outlier_station:
-            for station in outlier_station:
-                if station[1] in combined_dict:
-                    combined_dict[station[1]][1] +=1
+        for A_station in self.list_A_station:
+            for A in A_station:
+                if A[1] in combined_dict:
+                    combined_dict[A[1]][1]+=1
                 else:
-                    combined_dict[station[1]] = [station[0], 1, 0]
+                    combined_dict[A[1]] = [A[0], 1, 0]
 
-        for other_station in self.list_other_station:
-            for station in other_station:
-                if station[1] in combined_dict:
-                    combined_dict[station[1]][2] +=1
+        for B_station in self.list_B_station:
+            for B in B_station:
+                if B[1] in combined_dict:
+                    combined_dict[B[1]][2]+=1
                 else:
-                    combined_dict[station[1]] = [station[0], 0, 1]
+                    combined_dict[B[1]] = [B[0], 1, 0]
+
+        for C_station in self.list_C_station:
+            for C in C_station:
+                if C[1] in combined_dict:
+                    combined_dict[C[1]][1]+=1
+                else:
+                    combined_dict[C[1]] = [B[0], 1, 0]
 
         fig = plt.figure(figsize=(12,8), dpi = 240)
         ax = fig.add_subplot(projection=ccrs.PlateCarree())
@@ -329,11 +326,31 @@ class OutlierMaps(object):
                     lat_list.append(lat)
                     z_list.append(z)
 
-        ax.scatter(lon_list, lat_list, c = z_list, s = 1,  cmap = "OrRd")
+        ax.scatter(lon_list, lat_list, c = z_list, s = self.s,  cmap = "OrRd")
         
         self.combined_dict = combined_dict
         ax.coastlines()
         ax.stock_img()
         ax.gridlines(crs=ccrs.PlateCarree(), draw_labels = True)
         plt.savefig(fname)
-       
+    
+    def _generate_list_lat_lon(self, station, cams=False):
+        list_lat = []
+        list_lon = []
+        
+        for s in station:
+            lat, lon = s[1]
+            
+            if s[0].split("_")[0]== "grid":
+                if cams == False:
+                    pass
+                else:
+                    lon = lon_transform_minus180_base(lon)
+                    list_lat.append(lat)
+                    list_lon.append(lon)
+
+            else:
+                list_lat.append(lat)
+                list_lon.append(lon)
+
+        return list_lat, list_lon

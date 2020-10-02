@@ -59,3 +59,7 @@ def lon_transform_minus180_base(lon):
         lon = lon-360
     return lon
 
+def lat_lon_index(lat_lon):
+    lat = lat_lon[0]
+    lon = lat_lon[1]
+    

@@ -8,7 +8,7 @@ import h5py
 import numpy as np
 from tqdm import tqdm
 
-from DAAQS.utils.constants import MAX_ATTR_DICT, oaq_unit_dict
+from DAAQS.utils.constants import MAX_ATTR_DICT, OAQ_UNIT_DICT, OAQ_CONV_FACTOR 
 from DAAQS.utils.cfg import openaq_folder
 
 class OpenAQData(object):
@@ -66,14 +66,18 @@ class OpenAQData(object):
                 except KeyError:
                     oaq = OAQ(MAX_ATTR_DICT)
                 finally:
+                    self.tot_data_points+=1
                     if oaq.parameter == self.parameter:
-                        self.tot_data_points+=1
-                        if oaq.value!=-9999:
-                            self.good_data_points+=1
-                            data.append(oaq)
-                            if oaq.unit != oaq_unit_dict[self.parameter]:
-                                print(f"Unit is not {oaq_unit_dict[self.parameter]} and the data needs to be converted here")
-
+                        self.good_data_points+=1
+                        if oaq.unit != OAQ_UNIT_DICT[self.parameter]:
+                            try:
+                                oaq.value = oaq.value*OAQ_CONV_FACTOR[oaq.parameter][oaq.unit]
+                                oaq.unit = "ppm"
+                                data.append(oaq)                        
+                            except :
+                                print(f"Cannot recognise the unit {oaq.unit} for parameter {self.parameter}")
+                        else:
+                            data.append(oaq)                        
         return data
 
     def _gridded_data(self):

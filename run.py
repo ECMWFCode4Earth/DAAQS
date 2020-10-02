@@ -1,4 +1,4 @@
-from DAAQS import CAMSData, OpenAQData, temporal_average, Model, OutlierMaps, generate_day_list
+from DAAQS import CAMSData, OpenAQData, temporal_average, Model, StationsMap, generate_day_list
 from tqdm import tqdm
 
 import time 
@@ -6,12 +6,15 @@ import time
 strt_time  = time.time()
 day = "2019-01-04"
 span = 3
-parameter =  "pm25"
+parameter =  "so2"
+comp_with = "cams"
+n_steps = 1
 
-day_list= generate_day_list(day, step_size=2*span+1, n_steps=52)
+day_list= generate_day_list(day, step_size=2*span+1, n_steps=n_steps)
 
-t_outlier_KNN = []
-t_other_KNN = []
+t_A_KNN = []
+t_B_KNN = []
+t_C_KNN = []
 
 for day in day_list:
 
@@ -20,26 +23,26 @@ for day in day_list:
     o_data = OpenAQData(day, span, parameter).data
 
     ## We know that lat ranges from 0, 240 and lon ranges from 0, 479
-    s_outlier_KNN = []
-    s_other_KNN = []
+    s_A_KNN = []
+    s_B_KNN = []
+    s_C_KNN = []
 
-    for index_lat in tqdm(range(1,240,3)):
-        for index_lon in range(1,481,3):
+    for index_lat in tqdm(range(1,240)):
+        for index_lon in range(1,479):
             c_dict, o_dict = temporal_average(c_data,o_data, index_lat, index_lon )
-
             model = Model(c_dict, o_dict)
+            A_loc_KNN, B_loc_KNN, C_loc_KNN = model.pred_KNN(k=5, comp_with = comp_with)
+            s_A_KNN.extend(A_loc_KNN)
+            s_B_KNN.extend(B_loc_KNN)
+            s_C_KNN.extend(C_loc_KNN)
+    
+    t_A_KNN.append(s_A_KNN)
+    t_B_KNN.append(s_B_KNN)
+    t_C_KNN.append(s_C_KNN)
 
-            pred_KNN = model.pred_KNN(k = 5)
-            outlier_loc_KNN, other_loc_KNN = model.pred_location(pred_KNN)
+outlier_maps = StationsMap(t_A_KNN,t_B_KNN, t_C_KNN)
 
-            s_outlier_KNN.extend(outlier_loc_KNN)
-            s_other_KNN.extend(other_loc_KNN)
-
-    t_outlier_KNN.append(s_outlier_KNN)
-    t_other_KNN.append(s_other_KNN)
-
-outlier_maps = OutlierMaps(t_outlier_KNN,t_other_KNN)
-
-outlier_maps.generate_overall_plot("overall.png")
+#outlier_maps.generate_overall_plot("knn_5_50.png")
+outlier_maps.generate_step_plot("plots/knn_5_"+parameter+"_"+comp_with+".png")
 
 print(f"The total time taken by the script is {time.time()-strt_time:.3f}")
