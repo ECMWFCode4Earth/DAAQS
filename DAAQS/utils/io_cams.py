@@ -33,14 +33,17 @@ class CAMSData(object):
             # We convert while reading the data only
             conversion_factor = 1
             if self.parameter == "pm25":
-                # pm25 in ug/m3
+                # pm25 - from kg/m3 to ug/m3
                 conversion_factor = 1.0e9
             elif self.parameter == "so2":
-                conversion_factor = 1
+                # so2 from kg/kg to ppm
+                conversion_factor = 28.9644 / 64.0638 * 1e6 
             elif self.parameter == "no2":
-                conversion_factor == 1
+                # no2 from kg/kg to ppm
+                conversion_factor == 28.9644 / 46.0055 * 1e6 
             elif self.parameter == "o3":
-                conversion_factor = 1
+                # o3 from kg/kg to ppm
+                conversion_factor =  28.9644 / 47.9982 * 1e6 
 
             daily_data = Dataset(fpath, "r")[oaq_cams_dict[self.parameter]][:,:,:]
             daily_data[daily_data<1e-9] = 0

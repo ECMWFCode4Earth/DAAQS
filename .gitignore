@@ -15,6 +15,10 @@
 
 __pycache__
 
+
+# Remove .cdsapirc
+.cdsapirc
+
 # Data 
 data
 

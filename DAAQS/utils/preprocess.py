@@ -9,7 +9,7 @@ def temporal_average(c_data, o_data, index_lat, index_lon):
 
     ## CAMS Data
     c_grid = c_data[:,index_lat-1:index_lat+2,index_lon-1:index_lon+2]
-
+ 
     cams_list = [[] for k in range(8)]
 
     for time in range(c_grid.shape[0]):
@@ -28,12 +28,20 @@ def temporal_average(c_data, o_data, index_lat, index_lon):
                        (lat_1, lon_0), (lat_1, lon_1), (lat_1, lon_2), 
                        (lat_2, lon_0), (lat_2, lon_1), (lat_2, lon_2),]
 
+    lat_lon_list = [(index_lat-1, index_lon-1),(index_lat-1, index_lon), (index_lat-1, index_lon+1),
+                    (index_lat, index_lon-1),  (index_lat, index_lon),   (index_lat, index_lon+1), 
+                    (index_lat+1, index_lon-1),(index_lat+1, index_lon), (index_lat+1, index_lon+1)]
+
+
     for grid in range(cams_avg.shape[1]):    
         if "grid_"+str(grid) in c_dict:
             pass
         else: 
             c_dict["grid_"+str(grid)] = list(cams_avg[:,grid])
             c_dict["grid_"+str(grid)].append({"coordinates":coordinate_list[grid]})
+            c_dict["grid_"+str(grid)].append({"lat_lon_index":lat_lon_list[grid]})
+            c_dict["grid_"+str(grid)].append({"center_index":(index_lat, index_lon)})
+
     # cams_avg is 8x9 values which is at each 9 location we have 1x8 different values 
 
     ## OPENAQ Data
@@ -47,7 +55,7 @@ def temporal_average(c_data, o_data, index_lat, index_lon):
                     if obs.location in o_dict:
                         o_dict[obs.location][time_index].append(obs.value)
                     else:
-                        o_dict[obs.location] = [[],[],[],[],[],[],[],[], {"coordinates":(obs.lat, obs.lon)}]
+                        o_dict[obs.location] = [[],[],[],[],[],[],[],[], {"coordinates":(obs.lat, obs.lon)}, {"lat_lon_index":(lat, lon)}, {"center_index":(index_lat, index_lon)}]
 
     for each in o_dict:
         for i in range(8):

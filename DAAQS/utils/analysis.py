@@ -6,7 +6,6 @@ import numpy as np
 
 def max_openaq_grid(parameter,day):
     openaq_data = OpenAQData(day=day, span=0)
-    
     day_data = openaq_data.data[0]
     
     dx = 0.75
