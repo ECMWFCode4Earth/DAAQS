@@ -60,6 +60,11 @@ def lon_transform_minus180_base(lon):
     return lon
 
 def lat_lon_index(lat_lon):
-    lat = lat_lon[0]
-    lon = lat_lon[1]
-    
+    lat, lon = lat_lon
+    grid_size = 0.75
+    lon = lon_transform_0_base(lon)
+
+    lat_index = int((90.325- lat)/grid_size)
+    lon_index = int((0.325+lon)/grid_size)
+
+    return (lat_index, lon_index)

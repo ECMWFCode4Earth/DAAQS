@@ -22,3 +22,4 @@
 
 PM2.5 in CAMS is in kg/m3 while in openAQ is ug/m3 - 1e9
 
+nohup python run.py &> comp_with_cams_pm25.txt &
