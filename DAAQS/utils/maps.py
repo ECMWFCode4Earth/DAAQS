@@ -279,7 +279,7 @@ class StationsMap(object):
         
         ax.stock_img()
         ax.gridlines(crs=ccrs.PlateCarree(), draw_labels = True)
-        plt.savefig(file_name)
+        plt.savefig(map_name)
 
     def generate_overall_plot(self, map_name, file_name):
 
@@ -330,7 +330,7 @@ class StationsMap(object):
                     lat_list.append(lat)
                     z_list.append(z)
 
-        ax.scatter(lon_list, lat_list, c = z_list, s = self.s,  cmap = "OrRd")
+        ax.scatter(lon_list, lat_list, c = z_list, s = self.s,  cmap = "Spectral", alpha = 0.6)
         
         self.combined_dict = combined_dict
         ax.coastlines()
@@ -364,3 +364,164 @@ class StationsMap(object):
                 list_lon.append(lon)
 
         return list_lat, list_lon
+
+class LocalPlot(object):
+    def __init__(self,c_dict, o_dict, A_location, B_location, C_location, **kwargs) :
+        self.c_dict = c_dict
+        self.o_dict = o_dict
+        self.A_location = A_location
+        self.B_location = B_location
+        self.C_location = C_location
+        self.unit = "[UNK]"
+        self.parameter = "UNK"
+        self.day = "UNK"
+        self.span = "UNK"
+        self.param_name = "UNK"
+        self.method="UNK"
+        self.plot_dir = "/"
+        self.prefix = ""
+        self.loc_name = "UNK"
+
+
+        if "parameter" in kwargs:
+            self.parameter = kwargs["parameter"]
+        if "day" in kwargs:
+            self.day = kwargs["day"]
+        if "span" in kwargs:
+            self.span = kwargs["span"]
+        if "method" in kwargs:
+            self.method = kwargs["method"]
+        if "plot_dir" in kwargs:
+            self.plot_dir = kwargs["plot_dir"]
+        if "prefix" in kwargs:
+            self.prefix = kwargs["prefix"]
+        if "loc_name" in kwargs:
+            self.loc_name = kwargs["loc_name"]
+        if "comp_with" in kwargs:
+            self.comp_with = kwargs["comp_with"]
+
+        if self.parameter == "pm25":
+            self.param_name = "PM2.5"
+            self.unit = "[ug/m3]"
+        elif self.parameter == "so2":
+            self.param_name = "SO2"
+            self.unit = "[ppm]"
+        elif self.parameter == "no2":
+            self.param_name = "NO2"
+            self.unit = "[ppm]"
+        elif self.parameter == "o3":
+            self.param_name = "O3"
+            self.unit = "[ppm]"
+        
+        # We are using a 4 color color pallete
+
+        self.c1 = "#ff6d69" # light_red
+        self.c2 = '#ffbe4f' # "#fecc50"  light_yellow
+        self.c3 = "#0be7fb" # light_blue
+        self.c4 = "#010b8b" # dark blue
+        self.c5 = "#1e0521" # blackish       
+
+        # Grid Size
+
+        self.grid_size = 0.75
+        self.marker_size = 2
+        self.centre = self.c_dict["grid_4"][8]["coordinates"]
+
+    def class_spatial_plot(self):
+        
+        factor = 1.1
+        delta = 3/2*self.grid_size*factor
+        
+        stamen_terrain = cimgt.Stamen('terrain-background')
+
+        fig = plt.figure(figsize=(8,8))
+        ax = fig.add_subplot(projection=stamen_terrain.crs)
+        ax.set_extent([self.centre[1]+delta, self.centre[1]-delta,self.centre[0]-delta,self.centre[0]+delta] 
+                        , ccrs.PlateCarree())
+        ax.add_image(stamen_terrain, 8)
+
+        for A in self.A_location:
+            ax.plot(A[1][1], A[1][0], marker='o', color=self.c1, markersize=self.marker_size,
+                alpha=1.0, transform=ccrs.Geodetic())
+        
+        for B in self.B_location:
+            ax.plot(B[1][1], B[1][0], marker='o', color=self.c4, markersize=self.marker_size,
+                alpha=1.0, transform=ccrs.Geodetic())
+        
+        for C in self.C_location:
+            ax.plot(C[1][1], C[1][0], marker='o', color=self.c5, markersize=self.marker_size,
+                alpha=1.0, transform=ccrs.Geodetic())
+        
+        ring_list = [self._gen_ring(self.c_dict["grid_"+str(i)][8]["coordinates"]) for i in range(9)]
+
+        ax.add_geometries(ring_list, ccrs.PlateCarree(), facecolor='none', edgecolor='black')
+
+        ax.gridlines(crs=ccrs.PlateCarree(), draw_labels = True)
+        map_name = "_".join([self.prefix,"spatial", self.method, self.parameter, self.comp_with, self.loc_name, self.day, str(self.span)])
+        map_name = self.plot_dir+map_name+".png"
+        plt.savefig(map_name)
+
+    def class_ts_plot(self):
+        cams_data = []
+        for _, val in self.c_dict.items():
+            cams_data.append(val[:8])
+        
+        A_data = []
+        B_data = []
+        C_data = []
+
+        for _, val in self.o_dict.items():
+            for A_loc in self.A_location:
+                if val[8]["coordinates"] == A_loc[1]:
+                    A_data.append(val[:8])
+            for B_loc in self.B_location:
+                if val[8]["coordinates"] == B_loc[1]:
+                    B_data.append(val[:8])
+
+            for C_loc in self.C_location:
+                if val[8]["coordinates"] == C_loc[1]:
+                    C_data.append(val[:8])
+
+        cams_arr = self._stack(cams_data)       
+        A_arr = self._stack(A_data)
+        B_arr = self._stack(B_data)
+        C_arr = self._stack(C_data)
+
+        ylabel = " ".join(self.param_name + self.unit)
+        xlabel = "Hour of the day"
+        title = "Avg time series | Span : " + str(self.span) + " | Day :  " + self.day + "\n" \
+                + "Parameter : " +self.parameter + "| Method : " + self.method
+        fig, ax = plt.subplots(1,1, figsize=(6,4), dpi = 240)
+        
+        #cams_ax = ax.plot(cams_arr, color = self.c2, linestyle = "dashdot", label = "CAMS Data")
+        c_ax = ax.plot(C_arr, color = self.c5, linestyle = "dashdot")
+        b_ax = ax.plot(B_arr, color = self.c4, linestyle = "dashdot", label = "Type B OpenAQ station")
+        #a_ax = ax.plot(A_arr, color = self.c1, linestyle = "dashdot", label = "Type A OpenAQ station")
+        ax.set_xticklabels(["", "0-3","3-6", "6-9", "9-12", "12-15", "15-18", "18-21", "21-24"])
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.set_ylim(bottom = -1e-3)
+        ax.set_title(title)
+        #ax.legend(handles=[cams_ax[0], b_ax[0], a_ax[0]], loc='best')
+        map_name = "_".join([self.prefix,"ts", self.method, self.parameter, self.comp_with, self.loc_name, self.day, str(self.span)])
+        map_name = self.plot_dir+map_name+".png"
+        plt.savefig(map_name)
+
+    def _stack(self,list_data):
+        if list_data == []:
+            return []
+        else:
+            return np.stack(list_data).T
+
+    def _gen_ring(self, centre):
+        
+        lat, lon = centre
+
+        lon = lon_transform_minus180_base(lon)
+        
+        delta = self.grid_size/2.0
+        square_lons = [lon-delta,lon-delta,lon+delta,lon+delta]
+        square_lats = [lat-delta,lat+delta,lat+delta,lat-delta]
+        ring = LinearRing(list(zip(square_lons, square_lats)))
+
+        return ring

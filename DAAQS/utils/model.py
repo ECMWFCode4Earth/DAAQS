@@ -66,7 +66,7 @@ class Model(object):
                 pred = self.clf.labels_
             else:
                 pred = []
-            A_location, B_location, C_location = self.pred_location(pred)
+            #A_location, B_location, C_location = self.pred_location(pred)
         
         elif comp_with == "cams":
             pred = []
@@ -76,7 +76,8 @@ class Model(object):
                 self.clf.fit(each_X)
                 pred.append(self.clf.labels_[-1])
             
-            A_location, B_location, C_location = self.pred_location(pred)
+        A_location, B_location, C_location = self.pred_location(pred)
+        
         return A_location, B_location, C_location    
         
     def pred_COPOD(self, comp_with = "openaq"):
@@ -84,12 +85,13 @@ class Model(object):
         self.comp_with = comp_with
         
         if comp_with == "openaq":
+            if self.X_o == []:
+                pred = []
+            else:
+                self.clf = COPOD()
+                self.clf.fit(self.X_o)
+                pred = self.clf.labels_
             
-            self.clf = COPOD()
-            self.clf.fit(self.X_o)
-            pred = self.clf.labels_
-            A_location, B_location, C_location = self.pred_location(pred)
-        
         elif comp_with == "cams":
             pred = []
             for each_X in self.X_c:
@@ -97,78 +99,83 @@ class Model(object):
                 self.clf.fit(each_X)
                 pred.append(self.clf.labels_[-1])
             
-            A_location, B_location, C_location = self.pred_location(pred)
+        A_location, B_location, C_location = self.pred_location(pred)
+        
         return A_location, B_location, C_location    
 
 
-    def pred_LSCP(self, k, comp_with = "openaq"):
-        ## hyperparameters for KNN is tuned here
-        ## number of data points cannot be lesser than the local_regio_size (5 in this case)
-        self.comp_with = comp_with
+    # def pred_LSCP(self, k, comp_with = "openaq"):
+    #     ## hyperparameters for KNN is tuned here
+    #     ## number of data points cannot be lesser than the local_regio_size (5 in this case)
+    #     self.comp_with = comp_with
         
-        if comp_with == "openaq":
-            detector_list = [LOF(n_neighbors=3), LOF(n_neighbors=5), LOF(n_neighbors=7)]
+    #     detector_list = [LOF(n_neighbors=3), LOF(n_neighbors=5), LOF(n_neighbors=7)]
+        
+    #     if comp_with == "openaq":
+    #         if self.X_o == []:
+    #             pred = []
+    #         elif self.X_o.shape[0] > k:
+    #             self.clf = LSCP(detector_list, random_state=42, local_region_size=k)
+    #             try:
+    #                 self.clf.fit(self.X_o)
+    #             except:
+    #                 print(self.X_o.shape)
+    #             pred = self.clf.labels_
+    #         elif self.X_o.shape[0] > 3: 
+    #             # print(f"The value of k is changed from {k} to {self.X_o.shape[0]-1}")
+    #             k = self.X_o.shape[0]-1
+    #             self.clf = LSCP(detector_list, random_state=42, local_region_size=k)
+    #             try:
+    #                 self.clf.fit(self.X_o)
+    #             except:
+    #                 print(self.X_o.shape)
+    #             pred = self.clf.labels_
+    #         else:
+    #             pred = []
 
-            if len(self.X_o) > k:
-                self.clf = LSCP(detector_list, random_state=42, local_region_size=k)
-            else:
-                k = len(self.X_o)
-                self.clf = LSCP(detector_list, random_state=42, local_region_size=k)
-
-            self.clf.fit(self.X_o)
-            pred = self.clf.labels_
-            A_location, B_location, C_location = self.pred_location(pred)
+    #     elif comp_with == "cams":
+    #         pred = []
+    #         for each_X in self.X_c:
+    #             self.clf = LSCP(detector_list, random_state=42, local_region_size=k)
+    #             self.clf.fit(each_X)
+    #             pred.append(self.clf.labels_[-1])           
             
-        elif comp_with == "cams":
-            pred = []
+    #     A_location, B_location, C_location = self.pred_location(pred)
+        
+    #     return A_location, B_location, C_location  
 
-            for each_X in self.X_c:
-                
-                detector_list = [LOF(n_neighbors=3), LOF(n_neighbors=5), LOF(n_neighbors=7)]
-
-                if len(each_X) > k:
-                    self.clf = LSCP(detector_list, random_state=42, local_region_size=k)
-                else:
-                    k = len(each_X)
-                    self.clf = LSCP(detector_list, random_state=42, local_region_size=k)
-                
-            self.clf.fit(each_X)
-            pred.append(self.clf.labels_[-1])
-            
-            A_location, B_location, C_location = self.pred_location(pred)
-        return A_location, B_location, C_location  
-
-    def pred_PCA(self, n_comp, comp_with = 'openaq'):
+    def pred_PCA(self, n_comp=3, comp_with = 'openaq'):
+        
         ## hyperparameters for KNN is tuned here
         # Number of samples must be greater than the n_components (3 in this case). It can be made 0.3 to make it work
 
         self.comp_with = comp_with
-
+        
         if comp_with == "openaq":
-            if len(self.X_o) > n_comp:
+            if self.X_o == []:
+                pred = []
+            elif self.X_o.shape[0] > n_comp:
                 self.clf = PCA(n_components= n_comp)
-            else: 
-                n_comp = len(self.X_o)
-                self.clf = KNN(n_neighbors=n_comp)
-
-            pred = self.clf.labels_
-            A_location, B_location, C_location = self.pred_location(pred)
-
+                self.clf.fit(self.X_o)
+                pred = self.clf.labels_
+            elif self.X_o.shape[0] > 2: 
+                # print(f"The value of k is changed from {k} to {self.X_o.shape[0]-1}")
+                n_comp = self.X_o.shape[0]-1
+                self.clf = PCA(n_components= n_comp)
+                self.clf.fit(self.X_o)
+                pred = self.clf.labels_
+            else:
+                pred = []
+            
         elif comp_with == "cams":
             pred = []
-
             for each_X in self.X_c:
-                
-                if len(each_X) > n_comp:
-                    self.clf = PCA(n_components= n_comp)
-                else:
-                    n_comp = len(each_X)
-                    self.clf = PCA(n_components= n_comp)
-                
-            self.clf.fit(each_X)
-            pred.append(self.clf.labels_[-1])
+                self.clf = PCA(n_components= n_comp)
+                self.clf.fit(each_X)
+                pred.append(self.clf.labels_[-1])
             
-            A_location, B_location, C_location = self.pred_location(pred)
+        A_location, B_location, C_location = self.pred_location(pred)
+       
         return A_location, B_location, C_location
 
 
