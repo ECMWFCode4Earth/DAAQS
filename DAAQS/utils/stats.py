@@ -39,6 +39,11 @@ class Statistics(object):
             lat_min = 8
             lon_max = 98
             lon_min = 66
+        elif region == "Analysis":
+            lat_max = 54
+            lat_min = 48
+            lon_max = 10
+            lon_min = 0
         else :
             lat_max = 90 
             lat_min = -90
@@ -175,6 +180,10 @@ class Statistics(object):
         elif self.region == "Europe":
             img_quality = 6
             self.s = 1.0
+            img_size = (8,6)
+        elif self.region == "Analysis":
+            self.s = 1.0
+            img_quality = 4
             img_size = (8,6)
 
         fig = plt.figure(figsize=img_size, dpi = 240) 

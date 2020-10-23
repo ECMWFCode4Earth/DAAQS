@@ -29,4 +29,14 @@
 
 - The returned `.data` object is a 3-D numpy array with shape `n_stepsx241x480`
 
-##### Code Block
+### io_openaq.py
+
+##### Description
+- This file contains functions that are responsble for reading openaq data.
+- The file contains only one class called `OpenAQData` and needs three argumets for initialisation.
+    - `day` (str) : string date for which data is to be read
+    - `span` (int) : number of days before and after the day for which the data is to be read
+    - `parameter` (str) : parameter for which data is to be read. Example "pm25"
+- Data can be accesed from `OpenAQData` using `.data` object
+
+- The returned `.data` object is a 3-D numpy array with shape `n_stepsx241x480`

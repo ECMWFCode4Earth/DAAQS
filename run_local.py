@@ -12,18 +12,17 @@ span = 3
 parameter = "pm25"
 comp_with = "cams"
 
-# location = "Leipzig"
-# lat = 51.34
-# lon = 12.37
+location = "Leipzig"
+lat = 51.34
+lon = 12.37
 
 # loc_name = "London"
 # lat = 51.50
 # lon = 0.12
 
-loc_name = "Blank" #"Zurich"
-lat = 47.37
-lon = 8.541
-
+# loc_name = "Zurich"
+# lat = 47.37
+# lon = 8.541
 
 # loc_name = "Beijing"
 # lat = 39.90
@@ -41,6 +40,20 @@ lon = 8.541
 # location = "SF"
 # lat = 38.0
 # lon = -122.419
+
+# loc_name = "Good"
+# lat = 49.0
+# lon = 2.25
+
+# loc_name = "Bad"
+# lat = 51.0
+# lon = 4.5
+
+# loc_name = "Mixed"
+# lat = 51.0
+# lon = 3.0
+
+
 
 lat_index, lon_index = lat_lon_index((lat, lon))
 
