@@ -493,10 +493,10 @@ class LocalPlot(object):
                 + "Parameter : " +self.parameter + "| Method : " + self.method
         fig, ax = plt.subplots(1,1, figsize=(6,4), dpi = 240)
         
-        #cams_ax = ax.plot(cams_arr, color = self.c2, linestyle = "dashdot", label = "CAMS Data")
+        cams_ax = ax.plot(cams_arr, color = self.c2, linestyle = "dashdot", label = "CAMS Data")
         c_ax = ax.plot(C_arr, color = self.c5, linestyle = "dashdot")
         b_ax = ax.plot(B_arr, color = self.c4, linestyle = "dashdot", label = "Type B OpenAQ station")
-        #a_ax = ax.plot(A_arr, color = self.c1, linestyle = "dashdot", label = "Type A OpenAQ station")
+        a_ax = ax.plot(A_arr, color = self.c1, linestyle = "dashdot", label = "Type A OpenAQ station")
         ax.set_xticklabels(["", "0-3","3-6", "6-9", "9-12", "12-15", "15-18", "18-21", "21-24"])
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
